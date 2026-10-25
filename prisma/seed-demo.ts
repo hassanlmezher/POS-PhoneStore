@@ -398,7 +398,14 @@ export async function seedDemoData(ctx: Ctx) {
     const promisedAt = new Date(created.getTime() + int(1, 4) * DAY);
     promisedAt.setUTCHours(15, 0, 0, 0);
     const steps = pathTo(plan.status);
-    const stepTimes = steps.map((_, i) => new Date(Math.min(now - 60_000, created.getTime() + i * int(3, 20) * 3600_000)));
+    // Each step 3–20 h after the previous one (cumulative, so the history is always in order).
+    // int() is still called once per step so the rest of the seed stays the same.
+    let elapsedHours = 0;
+    const stepTimes = steps.map((_, i) => {
+      const gap = int(3, 20);
+      if (i > 0) elapsedHours += gap;
+      return new Date(Math.min(now - 60_000, created.getTime() + elapsedHours * 3600_000));
+    });
     const pickedUpAt = plan.status === "PICKED_UP" ? stepTimes.at(-1)! : null;
 
     const ticket = await prisma.ticket.create({

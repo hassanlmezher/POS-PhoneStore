@@ -44,7 +44,7 @@ export function TicketList({
         <li key={tk.id} className="relative flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2">
-              <Link href={`/tickets/${tk.number}`} className="font-semibold outline-none after:absolute after:inset-0 focus-visible:underline">
+              <Link href={`/tickets/${tk.number}`} className="shrink-0 font-semibold whitespace-nowrap outline-none after:absolute after:inset-0 focus-visible:underline">
                 <Ltr>{formatTicketNumber(prefix, tk.number)}</Ltr>
               </Link>
               <span className="truncate font-medium">{tk.device || "—"}</span>

@@ -62,14 +62,23 @@ function displayRegion(locale: string, region: string) {
   }
 }
 
+// ~420 zones × an Intl formatter each is slow (it ran on every settings render, server and phone),
+// so options are cached per zone and day (offsets only change with daylight saving).
+const zoneCache = new Map<string, SearchSelectOption>();
+
 function zoneOption(zone: string, now: Date): SearchSelectOption {
+  const key = `${zone}|${now.toISOString().slice(0, 10)}`;
+  const cached = zoneCache.get(key);
+  if (cached) return cached;
   let hint: string | undefined;
   try {
     hint = new Intl.DateTimeFormat("en", { timeZone: zone, timeZoneName: "shortOffset" })
       .formatToParts(now)
       .find((p) => p.type === "timeZoneName")?.value;
   } catch {}
-  return { value: zone, label: zone.replaceAll("_", " "), hint };
+  const option = { value: zone, label: zone.replaceAll("_", " "), hint };
+  zoneCache.set(key, option);
+  return option;
 }
 
 function useZoneGroups(current: string, suggestedLabel: string, allLabel: string) {
