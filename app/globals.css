@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Light mode only for now. All colors live here as tokens; never use ad-hoc colors in components. */
+:root {
+  --radius: 0.625rem;
+
+  --background: #f8fafc;
+  --foreground: #0f172a; /* slate-900 */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef2ff; /* indigo-50, active nav / subtle highlights */
+  --secondary: #f1f5f9; /* slate-100 */
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* slate-500 */
+  --subtle-foreground: #94a3b8; /* slate-400 */
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --destructive-soft: #fef2f2;
+  --success: #059669;
+  --success-foreground: #ffffff;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --warning-soft: #fffbeb;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #4f46e5;
+  --sidebar: #ffffff;
+
+  /* Ticket status palette: soft background + strong text (WCAG AA on the soft bg). */
+  /* Chart series (bars, legends); see components/bar-chart.tsx. */
+  --chart-1: #4f46e5; /* indigo-600, same as primary */
+  --chart-2: #0d9488; /* teal-600 */
+
+  /* WhatsApp-like message preview (settings > messages). */
+  --wa-wallpaper: #efeae2;
+  --wa-bubble: #d9fdd3;
+  --wa-text: #111b21;
+  --wa-meta: #54656f;
+  --wa-tick: #53bdeb;
+
+  --status-received: #f1f5f9;
+  --status-received-foreground: #334155;
+  --status-diagnosing: #e0f2fe;
+  --status-diagnosing-foreground: #075985;
+  --status-waiting-part: #fef3c7;
+  --status-waiting-part-foreground: #92400e;
+  --status-repairing: #e0e7ff;
+  --status-repairing-foreground: #3730a3;
+  --status-ready: #d1fae5;
+  --status-ready-foreground: #065f46;
+  --status-picked-up: #f4f4f5;
+  --status-picked-up-foreground: #52525b;
+  --status-cancelled: #fff1f2;
+  --status-cancelled-foreground: #9f1239;
+  --status-cant-fix: #ffedd5;
+  --status-cant-fix-foreground: #9a3412;
+
+  --app-font: var(--font-inter), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Arabic: IBM Plex Sans Arabic first (Latin glyphs still fall back to Inter). */
+:root[dir="rtl"],
+:root:lang(ar) {
+  --app-font: var(--font-plex-arabic), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme inline {
+  --font-sans: var(--app-font);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+
+  --color-wa-wallpaper: var(--wa-wallpaper);
+  --color-wa-bubble: var(--wa-bubble);
+  --color-wa-text: var(--wa-text);
+  --color-wa-meta: var(--wa-meta);
+  --color-wa-tick: var(--wa-tick);
+
+  --color-status-received: var(--status-received);
+  --color-status-received-foreground: var(--status-received-foreground);
+  --color-status-diagnosing: var(--status-diagnosing);
+  --color-status-diagnosing-foreground: var(--status-diagnosing-foreground);
+  --color-status-waiting-part: var(--status-waiting-part);
+  --color-status-waiting-part-foreground: var(--status-waiting-part-foreground);
+  --color-status-repairing: var(--status-repairing);
+  --color-status-repairing-foreground: var(--status-repairing-foreground);
+  --color-status-ready: var(--status-ready);
+  --color-status-ready-foreground: var(--status-ready-foreground);
+  --color-status-picked-up: var(--status-picked-up);
+  --color-status-picked-up-foreground: var(--status-picked-up-foreground);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+  --color-status-cant-fix: var(--status-cant-fix);
+  --color-status-cant-fix-foreground: var(--status-cant-fix-foreground);
+
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.03);
+  --shadow-pop: 0 8px 24px -6px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    line-height: 1.5;
+  }
+  /* Numbers line up everywhere they matter. */
+  table,
+  input[type="number"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"],
+  kbd,
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}

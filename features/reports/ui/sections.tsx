@@ -1,0 +1,395 @@
+import Link from "next/link";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { ChartColumn, Download, HandCoins, MessageCircle, Package, Percent, ReceiptText, ShoppingBag, UserRound, Wallet, Wrench } from "lucide-react";
+import { BarChart } from "@/components/bar-chart";
+import { EmptyState } from "@/components/empty-state";
+import { Ltr } from "@/components/ltr";
+import { Money } from "@/components/money";
+import { SectionCard } from "@/components/section-card";
+import { StatTile } from "@/components/stat-tile";
+import { StatusBadge, type TicketStatus } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { bestSellers, outstandingBalances, profitSummary, repairsByStatus, revenueByTechnician } from "@/features/reports/queries";
+import { trackUrl } from "@/features/tickets/notify";
+import { startOfDay, type DayRange } from "@/lib/dates";
+import { formatMoney, toLbp } from "@/lib/money";
+import { formatTicketNumber } from "@/lib/numbering";
+import { formatPhone } from "@/lib/phone";
+import type { ShopContext } from "@/lib/tenant";
+import { cn } from "@/lib/utils";
+import { fillTemplate, waLink } from "@/lib/whatsapp";
+
+type Props = { ctx: ShopContext; range: DayRange };
+
+async function ExportButton({ type, range }: { type: string; range?: DayRange }) {
+  const t = await getTranslations("reports");
+  const qs = new URLSearchParams({ type, ...(range && { from: range.from, to: range.to }) });
+  return (
+    <Button variant="outline" asChild>
+      <a href={`/reports/export?${qs.toString()}`} download>
+        <Download />
+        {t("exportCsv")}
+      </a>
+    </Button>
+  );
+}
+
+const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : null);
+
+export async function OverviewSection({ ctx, range }: Props) {
+  const { shop } = ctx;
+  const [t, format, p] = await Promise.all([getTranslations("reports"), getFormatter(), profitSummary(shop.id, range)]);
+  const money = (c: number, className?: string) => <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} className={className} lbpClassName="text-xs" />;
+  const margin = pct(p.totalProfit, p.totalRevenue);
+  const repairs = p.techs.reduce((s, x) => s + x.repairs, 0);
+  const short = p.days.length <= 7;
+  const activeDays = p.days.filter((d) => d.takings || d.productRevenue || d.repairTakings || d.salesCount);
+  const sum = (k: "salesCount" | "productRevenue" | "productCost" | "repairTakings" | "takings") => p.days.reduce((s, d) => s + d[k], 0);
+  const cellMoney = (c: number) => (c === 0 ? <span className="text-subtle-foreground">—</span> : money(c, "items-end whitespace-nowrap rtl:items-start"));
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section aria-label={t("summary")} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile icon={Wallet} label={t("totalTakings")}>
+          {money(p.takings)}
+        </StatTile>
+        <StatTile icon={ShoppingBag} label={t("productRevenue")}>
+          {money(p.productRevenue)}
+          <p className="mt-1 text-xs font-normal text-muted-foreground">
+            {t.rich("costOf", { amount: formatMoney(p.productCost, "USD"), m: (c) => <bdi dir="ltr">{c}</bdi> })}
+          </p>
+        </StatTile>
+        <StatTile icon={Wrench} label={t("repairRevenue")}>
+          {money(p.repairRevenue)}
+          <p className="mt-1 text-xs font-normal text-muted-foreground">{t("repairsPickedUp", { count: repairs })}</p>
+        </StatTile>
+        <StatTile icon={Percent} label={t("totalProfit")} tone={p.totalProfit < 0 ? "warning" : "success"}>
+          {money(p.totalProfit)}
+          <p className="mt-1 text-xs font-normal text-muted-foreground">
+            {margin === null ? t("noMargin") : t("margin", { pct: format.number(margin, { maximumFractionDigits: 1 }) })}
+          </p>
+        </StatTile>
+      </section>
+
+      <SectionCard title={t("salesByDay")} description={t("salesByDayHint")} actions={<ExportButton type="sales" range={range} />}>
+        {activeDays.length === 0 ? (
+          <EmptyState icon={ChartColumn} title={t("noSalesTitle")} body={t("noSalesBody")} className="py-8" />
+        ) : (
+          <BarChart
+            label={t("salesByDay")}
+            height={220}
+            series={[
+              { label: t("productRevenue"), color: "chart-1" },
+              { label: t("repairTakings"), color: "chart-2" },
+            ]}
+            items={p.days.map((d) => {
+              const date = startOfDay(d.day, range.tz);
+              return {
+                key: d.day,
+                label: format.dateTime(date, short ? { weekday: "short" } : { day: "numeric", month: "short" }),
+                title: format.dateTime(date, { weekday: "long", day: "numeric", month: "long" }),
+                values: [d.productRevenue, d.repairTakings],
+              };
+            })}
+          />
+        )}
+      </SectionCard>
+
+      {activeDays.length > 0 && (
+        <SectionCard title={t("dailyBreakdown")} description={t("dailyBreakdownHint")} padded={false}>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[40rem]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="ps-4 sm:ps-6">{t("date")}</TableHead>
+                  <TableHead className="text-end">{t("counterSales")}</TableHead>
+                  <TableHead className="text-end">{t("productRevenue")}</TableHead>
+                  <TableHead className="text-end">{t("productCost")}</TableHead>
+                  <TableHead className="text-end">{t("repairTakings")}</TableHead>
+                  <TableHead className="pe-4 text-end sm:pe-6">{t("takings")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeDays.map((d) => (
+                  <TableRow key={d.day}>
+                    <TableCell className="ps-4 whitespace-nowrap sm:ps-6">{format.dateTime(startOfDay(d.day, range.tz), { weekday: "short", day: "numeric", month: "short" })}</TableCell>
+                    <TableCell className="text-end tabular-nums">{d.salesCount || <span className="text-subtle-foreground">—</span>}</TableCell>
+                    <TableCell className="text-end">{cellMoney(d.productRevenue)}</TableCell>
+                    <TableCell className="text-end">{cellMoney(d.productCost)}</TableCell>
+                    <TableCell className="text-end">{cellMoney(d.repairTakings)}</TableCell>
+                    <TableCell className="pe-4 text-end sm:pe-6">{cellMoney(d.takings)}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="border-b-0 bg-muted/40 font-semibold hover:bg-muted/40">
+                  <TableCell className="ps-4 sm:ps-6">{t("total")}</TableCell>
+                  <TableCell className="text-end tabular-nums">{sum("salesCount")}</TableCell>
+                  <TableCell className="text-end">{money(sum("productRevenue"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="text-end">{money(sum("productCost"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="text-end">{money(sum("repairTakings"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="pe-4 text-end sm:pe-6">{money(sum("takings"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </SectionCard>
+      )}
+    </div>
+  );
+}
+
+export async function RepairsSection({ ctx, range }: Props) {
+  const { shop } = ctx;
+  const [t, ts, statuses, techs] = await Promise.all([
+    getTranslations("reports"),
+    getTranslations("status"),
+    repairsByStatus(shop.id, range),
+    revenueByTechnician(shop.id, range),
+  ]);
+  const money = (c: number) => (
+    <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end whitespace-nowrap rtl:items-start" lbpClassName="text-xs" />
+  );
+  const sorted = [...statuses].sort((a, b) => b.count - a.count);
+  const max = Math.max(1, ...sorted.map((s) => s.count));
+  const received = sorted.reduce((s, x) => s + x.count, 0);
+  const total = (k: "repairs" | "chargeUsdCents" | "partsCostUsdCents" | "laborUsdCents" | "profitUsdCents") => techs.reduce((s, x) => s + x[k], 0);
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <SectionCard title={t("repairsByStatus")} description={t("repairsByStatusHint", { count: received })}>
+        {sorted.length === 0 ? (
+          <EmptyState icon={Wrench} title={t("noRepairsTitle")} body={t("noRepairsBody")} className="py-6" />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {sorted.map((s) => (
+              <li key={s.status} className="grid grid-cols-[8.5rem_minmax(0,1fr)_2.5rem] items-center gap-3">
+                <StatusBadge status={s.status as TicketStatus} className="justify-self-start" />
+                <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <span className="block h-full rounded-full bg-chart-1" style={{ width: `${(s.count / max) * 100}%` }} />
+                </span>
+                <span className="text-end font-medium tabular-nums">
+                  <span className="sr-only">{ts(s.status as TicketStatus)}: </span>
+                  {s.count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+
+      <SectionCard title={t("byTechnician")} description={t("byTechnicianHint")} padded={false} actions={<ExportButton type="technicians" range={range} />}>
+        {techs.length === 0 ? (
+          <EmptyState icon={UserRound} title={t("noPickupsTitle")} body={t("noPickupsBody")} />
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[40rem]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="ps-4 sm:ps-6">{t("technician")}</TableHead>
+                  <TableHead className="text-end">{t("repairs")}</TableHead>
+                  <TableHead className="text-end">{t("charged")}</TableHead>
+                  <TableHead className="text-end">{t("partsCost")}</TableHead>
+                  <TableHead className="text-end">{t("labor")}</TableHead>
+                  <TableHead className="pe-4 text-end sm:pe-6">{t("profit")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {techs.map((r) => (
+                  <TableRow key={r.techId ?? "none"}>
+                    <TableCell className={cn("ps-4 font-medium sm:ps-6", !r.name && "text-muted-foreground italic")}>{r.name ?? t("unassigned")}</TableCell>
+                    <TableCell className="text-end tabular-nums">{r.repairs}</TableCell>
+                    <TableCell className="text-end">{money(r.chargeUsdCents)}</TableCell>
+                    <TableCell className="text-end">{money(r.partsCostUsdCents)}</TableCell>
+                    <TableCell className="text-end">{money(r.laborUsdCents)}</TableCell>
+                    <TableCell className="pe-4 text-end sm:pe-6">{money(r.profitUsdCents)}</TableCell>
+                  </TableRow>
+                ))}
+                {techs.length > 1 && (
+                  <TableRow className="border-b-0 bg-muted/40 font-semibold hover:bg-muted/40">
+                    <TableCell className="ps-4 sm:ps-6">{t("total")}</TableCell>
+                    <TableCell className="text-end tabular-nums">{total("repairs")}</TableCell>
+                    <TableCell className="text-end">{money(total("chargeUsdCents"))}</TableCell>
+                    <TableCell className="text-end">{money(total("partsCostUsdCents"))}</TableCell>
+                    <TableCell className="text-end">{money(total("laborUsdCents"))}</TableCell>
+                    <TableCell className="pe-4 text-end sm:pe-6">{money(total("profitUsdCents"))}</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </SectionCard>
+    </div>
+  );
+}
+
+export async function ProductsSection({ ctx, range }: Props) {
+  const { shop } = ctx;
+  const [t, format, rows] = await Promise.all([getTranslations("reports"), getFormatter(), bestSellers(shop.id, range)]);
+  const money = (c: number) => (
+    <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end whitespace-nowrap rtl:items-start" lbpClassName="text-xs" />
+  );
+  return (
+    <SectionCard title={t("bestSellers")} description={t("bestSellersHint")} padded={false} actions={<ExportButton type="products" range={range} />}>
+      {rows.length === 0 ? (
+        <EmptyState icon={Package} title={t("noProductsTitle")} body={t("noProductsBody")} />
+      ) : (
+        <div className="overflow-x-auto">
+          <Table className="min-w-[36rem]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-10 ps-4 sm:ps-6">#</TableHead>
+                <TableHead>{t("product")}</TableHead>
+                <TableHead className="text-end">{t("qty")}</TableHead>
+                <TableHead className="text-end">{t("revenue")}</TableHead>
+                <TableHead className="pe-4 text-end sm:pe-6">{t("profit")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r, i) => {
+                const m = pct(r.profitUsdCents, r.revenueUsdCents);
+                return (
+                  <TableRow key={r.productId} className="relative">
+                    <TableCell className="ps-4 text-muted-foreground tabular-nums sm:ps-6">{i + 1}</TableCell>
+                    <TableCell className="max-w-72">
+                      <Link href={`/inventory/${r.productId}`} className="block truncate font-medium outline-none after:absolute after:inset-0 hover:underline focus-visible:underline">
+                        {r.name}
+                      </Link>
+                      {r.sku && <Ltr className="text-xs text-muted-foreground">{r.sku}</Ltr>}
+                    </TableCell>
+                    <TableCell className="text-end font-medium tabular-nums">{r.qty}</TableCell>
+                    <TableCell className="text-end">{money(r.revenueUsdCents)}</TableCell>
+                    <TableCell className="pe-4 text-end sm:pe-6">
+                      {money(r.profitUsdCents)}
+                      {m !== null && <p className="text-xs text-muted-foreground">{t("margin", { pct: format.number(m, { maximumFractionDigits: 1 }) })}</p>}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+export async function BalancesSection({ ctx }: { ctx: ShopContext }) {
+  const { shop } = ctx;
+  const [t, data, templates] = await Promise.all([
+    getTranslations("reports"),
+    outstandingBalances(shop.id),
+    ctx.db.messageTemplate.findMany({ where: { key: "BALANCE_REMINDER" }, select: { locale: true, body: true } }),
+  ]);
+  const money = (c: number, usdClassName?: string) => (
+    <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} usdClassName={usdClassName} lbpClassName="text-xs" />
+  );
+
+  // One reminder per customer: what they owe now, else what's due at pickup.
+  const reminder = (r: (typeof data.rows)[number]) => {
+    const body = templates.find((x) => x.locale === r.locale)?.body ?? templates[0]?.body;
+    if (!body) return null;
+    const amount = r.owedUsdCents > 0 ? r.owedUsdCents : r.dueOnPickupUsdCents;
+    const refs = [
+      ...r.tickets.filter((x) => (r.owedUsdCents > 0 ? x.status === "PICKED_UP" : true)).map((x) => formatTicketNumber(shop.ticketPrefix, x.number)),
+      ...(r.owedUsdCents > 0 ? r.sales.map((s) => `#${s.number}`) : []),
+    ];
+    const first = r.tickets[0] ? formatTicketNumber(shop.ticketPrefix, r.tickets[0].number) : "";
+    return waLink(
+      r.phone,
+      fillTemplate(body, {
+        customer: r.name,
+        ticket: refs.join(", "),
+        device: "",
+        balance: `${formatMoney(amount, "USD")} (${formatMoney(toLbp(amount, shop.exchangeRate, shop.lbpRounding), "LBP")})`,
+        shop: shop.name,
+        trackUrl: first ? trackUrl(shop.slug, first) : "",
+      }),
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section aria-label={t("summary")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile icon={HandCoins} label={t("owedNow")} tone={data.totalOwedUsdCents > 0 ? "warning" : "default"}>
+          {money(data.totalOwedUsdCents)}
+        </StatTile>
+        <StatTile icon={Wrench} label={t("dueOnPickup")}>
+          {money(data.totalDueOnPickupUsdCents)}
+        </StatTile>
+        <StatTile icon={UserRound} label={t("customersWithBalance")}>
+          {data.rows.length}
+        </StatTile>
+      </section>
+
+      <SectionCard title={t("balances")} description={t("balancesHint")} padded={false} actions={<ExportButton type="balances" />}>
+        {data.rows.length === 0 ? (
+          <EmptyState icon={ReceiptText} title={t("noBalancesTitle")} body={t("noBalancesBody")} />
+        ) : (
+          <ul className="divide-y">
+            {data.rows.map((r) => {
+              const wa = reminder(r);
+              return (
+                <li key={r.customerId} className="flex flex-col gap-3 px-4 py-4 sm:px-6 xl:flex-row xl:items-center">
+                  <div className="min-w-0 xl:w-56 xl:shrink-0">
+                    <Link href={`/customers/${r.customerId}`} className="font-medium hover:underline focus-visible:underline">
+                      {r.name}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">
+                      <Ltr>{formatPhone(r.phone, ctx.shop.countryCode)}</Ltr>
+                    </p>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+                    {r.tickets.map((x) => (
+                      <Link
+                        key={x.id}
+                        href={`/tickets/${x.number}`}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 text-sm whitespace-nowrap transition-colors hover:bg-accent"
+                      >
+                        <Ltr className="font-medium">{formatTicketNumber(shop.ticketPrefix, x.number)}</Ltr>
+                        <StatusBadge status={x.status as TicketStatus} />
+                        <Ltr className="text-muted-foreground">{formatMoney(x.balanceUsdCents, "USD")}</Ltr>
+                      </Link>
+                    ))}
+                    {r.sales.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/sales/${s.number}`}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 text-sm whitespace-nowrap transition-colors hover:bg-accent"
+                      >
+                        <span className="font-medium">
+                          {t("sale")} <Ltr>#{s.number}</Ltr>
+                        </span>
+                        <Ltr className="text-muted-foreground">{formatMoney(s.balanceUsdCents, "USD")}</Ltr>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between gap-4 xl:shrink-0 xl:justify-end">
+                    <dl className="flex gap-4 text-sm">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("owedNow")}</dt>
+                        <dd>{money(r.owedUsdCents, r.owedUsdCents > 0 ? "text-warning" : "text-subtle-foreground")}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("dueOnPickup")}</dt>
+                        <dd>{money(r.dueOnPickupUsdCents)}</dd>
+                      </div>
+                    </dl>
+                    {wa && (
+                      <Button variant="outline" size="icon" asChild>
+                        <a href={wa} target="_blank" rel="noopener noreferrer" aria-label={t("sendReminder", { name: r.name })} title={t("sendReminder", { name: r.name })}>
+                          <MessageCircle className="text-success" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionCard>
+    </div>
+  );
+}
+

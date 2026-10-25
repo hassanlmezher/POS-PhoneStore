@@ -1,0 +1,695 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Money: USD in cents, LBP in whole pounds. Columns named *UsdCents are USD cents.
+
+enum Locale {
+  EN
+  AR
+}
+
+enum Currency {
+  USD
+  LBP
+}
+
+enum Role {
+  OWNER
+  TECHNICIAN
+  CASHIER
+}
+
+enum SubStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum TicketStatus {
+  RECEIVED
+  DIAGNOSING
+  WAITING_PART
+  REPAIRING
+  READY
+  PICKED_UP
+  CANCELLED
+  CANT_FIX
+}
+
+enum ItemKind {
+  PART
+  LABOR
+}
+
+enum ProductType {
+  ACCESSORY
+  PART
+}
+
+enum MovementReason {
+  INITIAL
+  SALE
+  TICKET_PART
+  RESTOCK
+  ADJUSTMENT
+  DAMAGED
+  RETURN
+}
+
+enum SaleStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum SaleItemKind {
+  PRODUCT
+  TICKET_BALANCE
+}
+
+enum PaymentMethod {
+  CASH
+  WHISH
+  OMT
+  CARD
+  BANK_TRANSFER
+}
+
+enum CashMovementType {
+  PAY_IN
+  PAY_OUT
+}
+
+enum TemplateKey {
+  TICKET_RECEIVED
+  TICKET_READY
+  TICKET_WAITING_PART
+  TICKET_CANT_FIX
+  BALANCE_REMINDER
+}
+
+// ---------- Platform ----------
+
+model Shop {
+  id                  String    @id @default(cuid())
+  slug                String    @unique
+  name                String
+  logoUrl             String?
+  address             String?
+  phone               String?
+  defaultLocale       Locale    @default(EN)
+  exchangeRate        Int       @default(89500) // LBP per 1 USD
+  lbpRounding         Int       @default(1000)
+  defaultWarrantyDays Int       @default(30)
+  receiptFooter       String?
+  receiptFooterAr     String?
+  termsText           String?
+  termsTextAr         String?
+  ticketPrefix        String    @default("R-")
+  timezone            String    @default("Asia/Beirut") // IANA zone for days in reports and dates
+  countryCode         String    @default("961") // default calling code for local phone numbers
+  ticketSeq           Int       @default(1000)
+  saleSeq             Int       @default(1000)
+  planId              String?
+  subscriptionStatus  SubStatus @default(TRIAL)
+  paidUntil           DateTime?
+  trialEndsAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  plan                 Plan?                 @relation(fields: [planId], references: [id])
+  users                User[]
+  customers            Customer[]
+  brands               DeviceBrand[]
+  models               DeviceModel[]
+  tickets              Ticket[]
+  ticketItems          TicketItem[]
+  ticketStatusLogs     TicketStatusLog[]
+  ticketNotes          TicketNote[]
+  products             Product[]
+  stockMovements       StockMovement[]
+  sales                Sale[]
+  saleItems            SaleItem[]
+  payments             Payment[]
+  cashSessions         CashSession[]
+  cashMovements        CashMovement[]
+  templates            MessageTemplate[]
+  exchangeRates        ExchangeRate[]
+  subscriptionPayments SubscriptionPayment[]
+  auditLogs            AuditLog[]
+  presets              ShopPreset[]
+  logo                 ShopLogo?
+}
+
+// Shop logo bytes (PNG/JPG/WEBP, ≤ 1 MB). Kept in the database so the app needs no disk storage
+// (works on serverless hosts like Vercel and in Docker alike).
+model ShopLogo {
+  shopId    String   @id
+  mime      String
+  data      Bytes
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+// Platform-wide settings (single row, id "platform"), edited by the super admin.
+model PlatformSetting {
+  id               String   @id @default("platform")
+  appName          String   @default("RepairPOS")
+  contactWhatsapp  String?
+  contactEmail     String?
+  // Shop whose live (demo) data illustrates the landing page.
+  showcaseShopSlug String?
+  // Copied into every new shop: { TICKET_READY: { EN, AR }, ... }
+  defaultTemplates Json?
+  // Copied into every new shop: [{ kind, labelEn, labelAr }]
+  defaultPresets   Json?
+  updatedAt        DateTime @updatedAt
+}
+
+enum PresetKind {
+  PROBLEM // quick-pick problems on the repair intake form
+  PAY_IN // quick reasons for cash put into the drawer
+  PAY_OUT // quick reasons for cash taken out of the drawer
+}
+
+// Shop-editable quick picks (bilingual).
+model ShopPreset {
+  id        String     @id @default(cuid())
+  shopId    String
+  kind      PresetKind
+  labelEn   String
+  labelAr   String
+  sort      Int        @default(0)
+  createdAt DateTime   @default(now())
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, kind, sort])
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  priceUsdCents Int
+  maxStaff      Int?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  shops         Shop[]
+}
+
+model SubscriptionPayment {
+  id             String   @id @default(cuid())
+  shopId         String
+  amountUsdCents Int
+  method         String
+  periodStart    DateTime
+  periodEnd      DateTime
+  note           String?
+  recordedById   String
+  createdAt      DateTime @default(now())
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+}
+
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  shopId    String
+  rate      Int
+  setById   String
+  createdAt DateTime @default(now())
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  setBy     User     @relation(fields: [setById], references: [id])
+
+  @@index([shopId, createdAt])
+}
+
+// ---------- Auth (Better Auth core tables + our fields) ----------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  shopId        String?
+  role          Role      @default(CASHIER)
+  isSuperAdmin  Boolean   @default(false)
+  locale        Locale?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  shop             Shop?             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  assignedTickets  Ticket[]          @relation("assignedTo")
+  createdTickets   Ticket[]          @relation("createdBy")
+  statusLogs       TicketStatusLog[]
+  ticketNotes      TicketNote[]
+  stockMovements   StockMovement[]
+  sales            Sale[]
+  payments         Payment[]
+  openedSessions   CashSession[]     @relation("openedBy")
+  closedSessions   CashSession[]     @relation("closedBy")
+  cashMovements    CashMovement[]
+  exchangeRatesSet ExchangeRate[]
+  auditLogs        AuditLog[]
+
+  @@index([shopId])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------- Customers ----------
+
+model Customer {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  phone     String // E.164
+  phoneAlt  String?
+  notes     String?
+  locale    Locale   @default(EN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shop    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+  sales   Sale[]
+
+  @@unique([shopId, phone])
+  @@index([shopId, name])
+}
+
+// ---------- Device catalog (shopId null = global) ----------
+
+model DeviceBrand {
+  id        String        @id @default(cuid())
+  shopId    String?
+  name      String
+  createdAt DateTime      @default(now())
+  shop      Shop?         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  models    DeviceModel[]
+
+  @@unique([shopId, name])
+}
+
+model DeviceModel {
+  id        String      @id @default(cuid())
+  shopId    String?
+  brandId   String
+  name      String
+  createdAt DateTime    @default(now())
+  shop      Shop?       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  brand     DeviceBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  tickets   Ticket[]
+  products  Product[]   @relation("ProductCompatibility")
+
+  @@unique([brandId, name])
+}
+
+// ---------- Repair tickets ----------
+
+model Ticket {
+  id               String       @id @default(cuid())
+  shopId           String
+  number           Int
+  customerId       String
+  deviceModelId    String?
+  brandText        String?
+  modelText        String?
+  imei             String?
+  color            String?
+  problem          String
+  passcodeEnc      String?
+  patternEnc       String?
+  accessories      String[]
+  conditionNotes   String?
+  estimateUsdCents Int?
+  promisedAt       DateTime?
+  status           TicketStatus @default(RECEIVED)
+  assignedToId     String?
+  warrantyDays     Int
+  pickedUpAt       DateTime?
+  totalUsdCents    Int          @default(0)
+  createdById      String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  shop        Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer    Customer          @relation(fields: [customerId], references: [id])
+  deviceModel DeviceModel?      @relation(fields: [deviceModelId], references: [id])
+  assignedTo  User?             @relation("assignedTo", fields: [assignedToId], references: [id])
+  createdBy   User              @relation("createdBy", fields: [createdById], references: [id])
+  items       TicketItem[]
+  statusLogs  TicketStatusLog[]
+  notes       TicketNote[]
+  payments    Payment[]
+  saleItems   SaleItem[]
+
+  @@unique([shopId, number])
+  @@index([shopId, status])
+  @@index([shopId, customerId])
+  @@index([shopId, imei])
+  @@index([shopId, assignedToId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([customerId])
+  @@index([deviceModelId])
+}
+
+model TicketItem {
+  id                String   @id @default(cuid())
+  shopId            String
+  ticketId          String
+  kind              ItemKind
+  productId         String?
+  description       String
+  qty               Int      @default(1)
+  unitPriceUsdCents Int
+  unitCostUsdCents  Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket         Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  product        Product?        @relation(fields: [productId], references: [id])
+  stockMovements StockMovement[]
+
+  @@index([shopId, ticketId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([ticketId])
+  @@index([productId])
+}
+
+model TicketStatusLog {
+  id        String        @id @default(cuid())
+  shopId    String
+  ticketId  String
+  from      TicketStatus?
+  to        TicketStatus
+  userId    String
+  note      String?
+  createdAt DateTime      @default(now())
+
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([shopId, ticketId, createdAt])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([ticketId])
+}
+
+model TicketNote {
+  id        String   @id @default(cuid())
+  shopId    String
+  ticketId  String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([shopId, ticketId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([ticketId])
+}
+
+// ---------- Inventory ----------
+
+model Product {
+  id                String      @id @default(cuid())
+  shopId            String
+  type              ProductType
+  name              String
+  sku               String?
+  barcode           String?
+  category          String?
+  costUsdCents      Int         @default(0)
+  priceUsdCents     Int
+  qty               Int         @default(0)
+  lowStockThreshold Int         @default(2)
+  active            Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  shop             Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  compatibleModels DeviceModel[]   @relation("ProductCompatibility")
+  stockMovements   StockMovement[]
+  ticketItems      TicketItem[]
+  saleItems        SaleItem[]
+
+  @@unique([shopId, sku])
+  @@unique([shopId, barcode])
+  @@index([shopId, type, name])
+}
+
+model StockMovement {
+  id           String         @id @default(cuid())
+  shopId       String
+  productId    String
+  delta        Int
+  qtyAfter     Int
+  reason       MovementReason
+  note         String?
+  saleId       String?
+  ticketItemId String?
+  userId       String
+  createdAt    DateTime       @default(now())
+
+  shop       Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sale       Sale?       @relation(fields: [saleId], references: [id])
+  ticketItem TicketItem? @relation(fields: [ticketItemId], references: [id], onDelete: SetNull)
+  user       User        @relation(fields: [userId], references: [id])
+
+  @@index([shopId, productId, createdAt])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([productId])
+  @@index([saleId])
+  @@index([ticketItemId])
+}
+
+// ---------- Sales & payments (recorded, never processed) ----------
+
+model Sale {
+  id               String     @id @default(cuid())
+  shopId           String
+  number           Int
+  customerId       String?
+  subtotalUsdCents Int
+  discountUsdCents Int        @default(0)
+  totalUsdCents    Int
+  changeAmount     Int        @default(0)
+  changeCurrency   Currency?
+  status           SaleStatus @default(COMPLETED)
+  cashierId        String
+  cashSessionId    String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer       Customer?       @relation(fields: [customerId], references: [id])
+  cashier        User            @relation(fields: [cashierId], references: [id])
+  cashSession    CashSession?    @relation(fields: [cashSessionId], references: [id])
+  items          SaleItem[]
+  payments       Payment[]
+  stockMovements StockMovement[]
+
+  @@unique([shopId, number])
+  @@index([shopId, createdAt])
+  @@index([shopId, customerId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([cashSessionId])
+  @@index([customerId])
+}
+
+model SaleItem {
+  id                String       @id @default(cuid())
+  shopId            String
+  saleId            String
+  kind              SaleItemKind
+  productId         String?
+  ticketId          String?
+  description       String
+  qty               Int          @default(1)
+  unitPriceUsdCents Int
+  unitCostUsdCents  Int          @default(0)
+  discountUsdCents  Int          @default(0)
+
+  shop    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+  ticket  Ticket?  @relation(fields: [ticketId], references: [id])
+
+  @@index([shopId, saleId])
+  @@index([shopId, ticketId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([saleId])
+  @@index([ticketId])
+  @@index([productId])
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  shopId             String
+  saleId             String?
+  ticketId           String?
+  method             PaymentMethod
+  currency           Currency
+  amount             Int // cents if USD, pounds if LBP
+  rate               Int // LBP per USD at the time of payment
+  usdCentsEquivalent Int
+  reference          String?
+  cashSessionId      String?
+  userId             String
+  createdAt          DateTime      @default(now())
+
+  shop        Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sale        Sale?        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  ticket      Ticket?      @relation(fields: [ticketId], references: [id])
+  cashSession CashSession? @relation(fields: [cashSessionId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([shopId, createdAt])
+  @@index([shopId, ticketId])
+  @@index([shopId, cashSessionId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([saleId])
+  @@index([ticketId])
+  @@index([cashSessionId])
+}
+
+// ---------- Cash drawer ----------
+
+model CashSession {
+  id               String    @id @default(cuid())
+  shopId           String
+  openedById       String
+  openedAt         DateTime  @default(now())
+  closedById       String?
+  closedAt         DateTime?
+  openingUsdCents  Int
+  openingLbp       Int
+  countedUsdCents  Int?
+  countedLbp       Int?
+  expectedUsdCents Int?
+  expectedLbp      Int?
+  note             String?
+
+  shop      Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  openedBy  User           @relation("openedBy", fields: [openedById], references: [id])
+  closedBy  User?          @relation("closedBy", fields: [closedById], references: [id])
+  sales     Sale[]
+  payments  Payment[]
+  movements CashMovement[]
+
+  @@index([shopId, openedAt])
+}
+
+model CashMovement {
+  id            String           @id @default(cuid())
+  shopId        String
+  cashSessionId String
+  type          CashMovementType
+  currency      Currency
+  amount        Int
+  reason        String
+  userId        String
+  createdAt     DateTime         @default(now())
+
+  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  cashSession CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@index([shopId, cashSessionId])
+  // Child lookups by foreign key (balances, reports, cascades).
+  @@index([cashSessionId])
+}
+
+// ---------- Messaging ----------
+
+model MessageTemplate {
+  id        String      @id @default(cuid())
+  shopId    String
+  key       TemplateKey
+  locale    Locale
+  body      String
+  updatedAt DateTime    @updatedAt
+  shop      Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, key, locale])
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  shopId    String
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([shopId, createdAt])
+}

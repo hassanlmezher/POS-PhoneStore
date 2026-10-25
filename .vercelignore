@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.*
+!.env.example
+data
+backups
+design-references
+lib/generated
+scripts/launchd
+*.log

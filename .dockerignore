@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+data
+backups
+.env
+.env.*
+!.env.example
+design-references
+*.log

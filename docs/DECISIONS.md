@@ -1,0 +1,127 @@
+# Decisions
+
+One line each. Newest at the bottom.
+
+- 2026-10-23: Auth = Better Auth (native email+password with DB sessions; Auth.js credentials provider doesn't support DB sessions cleanly).
+- 2026-10-23: Product name/domain are env vars (`APP_NAME`, `ROOT_DOMAIN`) until the owner chooses them.
+- 2026-10-23: Locale via cookie/user preference, no `/ar` URL prefix (URLs are already per-subdomain).
+- 2026-10-23: Shop routes live at `app/shop/[slug]/…`, reachable only through middleware host rewrite.
+- 2026-10-23: Tenant isolation enforced by a Prisma extension `tenantDb(shopId)`; raw SQL must filter `shopId` by hand. No Postgres RLS in v1.
+- 2026-10-23: Session cookies are host-only; one user belongs to exactly one shop; email is globally unique.
+- 2026-10-23: Prices/costs/totals stored in USD cents; payments stored in tendered currency + exchange-rate snapshot + USD-cents equivalent.
+- 2026-10-23: `Int` is enough for money columns (max ≈ 2.1B LBP ≈ $24k per row); revisit if needed.
+- 2026-10-23: Ticket/sale numbers from per-shop counters incremented atomically in the create transaction.
+- 2026-10-23: Passcode/pattern encrypted with AES-256-GCM (node:crypto, key from `APP_SECRET`); reveals are audit-logged.
+- 2026-10-23: All stock changes go through `moveStock()` and are logged in `StockMovement`; negative stock allowed but flagged.
+- 2026-10-23: QR via `qrcode` package; Code128 barcodes via own small SVG encoder; scanners treated as keyboard input.
+- 2026-10-23: Printing = browser print with dedicated 80mm/A4 print routes. No print server.
+- 2026-10-23: ~~Charts = shadcn chart (recharts)~~ → superseded 2026-10-24: own small SVG bar chart (no chart library).
+- 2026-10-23: Deploy = Docker + Postgres + Caddy on-demand TLS (no wildcard cert / DNS API needed).
+- 2026-10-23: Phone numbers stored in E.164, default country Lebanon (+961); search matches trailing digits.
+- 2026-10-23: Expired subscription = read-only shop app with banner; public track page keeps working.
+- 2026-10-23: Fonts self-hosted via `next/font` (Inter + IBM Plex Sans Arabic).
+- 2026-10-23: Next 16.4 (scaffold default) with `cacheComponents` off; tenancy lives in `proxy.ts` (Next 16 name for middleware).
+- 2026-10-23: Prisma 7.10 pinned (npm `latest` pointed at an 8.0 RC); Postgres via `@prisma/adapter-pg`; client in `lib/generated/prisma` (gitignored, `postinstall` generates).
+- 2026-10-23: Login/logout return a result and the client does a full navigation; `redirect()` in a server action skips the proxy's subdomain rewrite.
+- 2026-10-23: Login errors are identical for "wrong password" and "account belongs to another shop".
+- 2026-10-23: Locale cookie is host-only like the session, so each shop subdomain remembers its own language.
+- 2026-10-23: Local dev DB = Homebrew postgresql@16 started with `pnpm db:start` (no Docker on the owner's Mac); docker-compose stays for deployment and other machines.
+- 2026-10-23: Next's auto-generated AGENTS.md is kept (points to bundled Next 16 docs).
+- 2026-10-23: Tablet sidebar = icon rail with tooltips; desktop = full, collapsible (state in localStorage); phone = sheet + bottom nav with central "+ new ticket".
+- 2026-10-23: Shortcuts match physical key position, so N/S// also work on an Arabic keyboard layout; disabled for read-only shops.
+- 2026-10-23: Server actions get the shop from the request host (`requireActionShop`), never from a client-sent slug; read-only shops refuse writes there.
+- 2026-10-23: After mutations, `refreshShop()` revalidates the whole tree (public paths differ from internal `/shop/[slug]` routes; pages are dynamic anyway).
+- 2026-10-23: Inside `prisma.$transaction` we use the raw client and set `shopId` explicitly on every read/write.
+- 2026-10-23: Ticket charge = parts + labor once any item exists, otherwise the estimate; balance = charge − deposits − POS ticket-balance lines.
+- 2026-10-23: Customer "owed" = positive balances on picked-up tickets; open tickets show "due on pickup" separately.
+- 2026-10-23: "Other" devices create a shop-level brand/model on first use, so they appear in the list next time.
+- 2026-10-23: Quick-add at intake reuses an existing customer if the phone is already known (upsert on shop + phone).
+- 2026-10-23: Pattern locks stored as dot sequence "1-5-9-6" (3×3 grid, 1 = top-left), encrypted like passcodes.
+- 2026-10-23: Any status can move to any status; entering Picked up sets `pickedUpAt` (warranty start), leaving it clears it.
+- 2026-10-23: WhatsApp links are built server-side at render and used as plain `<a target="_blank">` (no popup blockers); message language = customer's locale; balance shown as USD + LBP.
+- 2026-10-23: Receipt QR points to `<slug>.<domain>/track?t=R-1042`; the phone is asked on the page, never put in the URL.
+- 2026-10-23: Cash payments attach to the open cash session if one exists (cash drawer UI is Phase 4).
+- 2026-10-23: Technicians see tickets assigned to them plus unassigned ones (`ticketAccessWhere`).
+- 2026-10-24: Promised dates are stored as 18:00 local time on the chosen day; READY tickets are never shown as overdue.
+- 2026-10-24: Dropping a card on the board's "Closed" column = Picked up; Cancelled / Can't fix are set from the card's status menu.
+- 2026-10-24: Print pages take `?size=80mm|a4&lang=en|ar`; an explicit locale passed to next-intl wins over the cookie.
+- 2026-10-24: Phones displayed in local Lebanese format ("70 123 456") via `formatPhone`; stored as E.164.
+- 2026-10-24: POS prices always come from the DB; the client sends only qty, line/cart discounts and how much of a ticket balance to pay.
+- 2026-10-24: Payments are stored as tendered (amount + currency); change handed back is stored on the sale (`changeAmount` + `changeCurrency`). Cash drawer = cash in per currency − change out.
+- 2026-10-24: Overpaying is only allowed with cash (change can't come from card/transfer); LBP change rounds down to the shop's rounding unit.
+- 2026-10-24: Underpaid sales are allowed only with a customer; the remainder counts in the customer's "owed".
+- 2026-10-24: Paying a repair at the POS = a `TICKET_BALANCE` sale line (cost 0; part costs live on the ticket), optionally marking the ticket Picked up.
+- 2026-10-24: Voiding a sale (owner only, `sales.void`) keeps the record, returns products to stock, is audit-logged; voided sales are ignored in ticket balances, customer owed, drawer and reports.
+- 2026-10-24: Product quantity changes only via adjustments, sales, tickets and voids (all through `moveStock`); the edit form never sets qty. Restock must be +, Damaged must −.
+- 2026-10-24: Low-stock = active products with qty ≤ their threshold (raw SQL compare, filtered by shopId).
+- 2026-10-24: Barcode labels use our Code128-B SVG encoder (barcode, else SKU); default label size 50×30 mm, A4 sheet optional.
+- 2026-10-24: LBP change is computed in pounds (tendered LBP − total in LBP), not via USD cents, which lost up to 1,000 LBP after rounding.
+- 2026-10-24: Sale balances of ±1 cent count as paid (LBP→cents rounding on exact LBP payments).
+- 2026-10-24: POS search Enter: exact SKU/barcode is added at once; otherwise the highlighted result; nothing found = toast.
+- 2026-10-24: "Exact LBP cash" and switching a payment row to LBP round up to the shop's rounding unit so the payment never falls short.
+- 2026-10-24: Products are archived (not deleted) from the edit dialog; archived ones show via "Show archived".
+- 2026-10-24: A4 label sheet = 3 columns × 63.5 × 38.1 mm (21 per sheet).
+- 2026-10-24: The balance-reminder WhatsApp template is only suggested when the ticket actually has a balance.
+- 2026-10-24: Reports group by local day in `Asia/Beirut` (`SHOP_TIMEZONE`); becomes a shop setting for the Gulf.
+- 2026-10-24: "Takings" = all payments received − change given (cash basis). "Product revenue" = product lines after line + cart discounts (cart discount applied to products first). "Repair revenue/profit" = repairs picked up in the range (charge − part costs), per assigned technician.
+- 2026-10-24: Expected drawer cash is tracked per currency (USD and LBP never converted): opening + cash payments − change given + pay-ins − pay-outs; snapshotted at close.
+- 2026-10-24: Only one open drawer per shop (row lock on open). Non-cash takings shown on the drawer for information only.
+- 2026-10-24: CSV export via a route handler (`/reports/export?type=`), UTF-8 with BOM so Excel shows Arabic; amounts as plain decimals in USD.
+- 2026-10-24: Money tiles on the dashboard only for roles with "pos"; technicians see their assigned repairs instead.
+- 2026-10-24: Charts are our own SVG `BarChart` (no chart library); series colors are the `--chart-1` (indigo) / `--chart-2` (teal) tokens.
+- 2026-10-24: Reports are split into URL tabs (`?tab=overview|repairs|products|balances`, keeping `from`/`to`); each tab loads only its own queries. Daily table hides days without activity.
+- 2026-10-24: Closing the drawer lands on `/cash/[id]?closed=1` (result banner); closed sessions show the snapshot expected values, not a recomputation.
+- 2026-10-24: Dashboard "Ready" rows get a wa.me TICKET_READY link in the customer's locale; balances report gets one BALANCE_REMINDER link per customer (owed amount, else due-on-pickup).
+- 2026-10-24: Takings per sale = payments − change; a ±1 cent gap to the sale total counts as the total (same rounding rule as sale balances and the POS cart).
+- 2026-10-24: POS hides a stale "add customer"/"overpaid non-cash" error once the cart no longer has that problem.
+- 2026-10-24: Effective subscription status is computed from dates (`lib/subscription.ts`): trial past `trialEndsAt` or active past `paidUntil` = EXPIRED. Expired/suspended = read-only shop app.
+- 2026-10-24: Logos stored on local disk under `UPLOAD_DIR/<shopId>/logo-<version>.<ext>` (Docker volume in prod), type sniffed from bytes (PNG/JPG/WEBP, ≤ 1 MB), served publicly at `/files/logo?v=<version>` with immutable caching.
+- 2026-10-24: Staff accounts are created by the owner with a temporary password (no email sending). Password resets and deactivation sign the user out everywhere. A shop always keeps ≥ 1 active owner. Plan `maxStaff` limits active staff.
+- 2026-10-24: Exchange-rate changes are logged in `ExchangeRate`; rate must be 1,000–1,000,000 LBP/USD to catch typos.
+- 2026-10-24: Public `/track` needs ticket number + last 6–8 phone digits; any mismatch = the same "not found". Shows status, dates, balance and status timeline only (no staff names, notes, prices). In-memory rate limit 10 tries / 10 min per IP + shop (single-instance; move to Postgres if scaled out).
+- 2026-10-24: Super admin creates shops with a trial, default templates and the first owner; manual payments set ACTIVE and extend `paidUntil` (never shorten). Reserved slugs: www, admin, api, app, mail, static, shop, track, files, login.
+- 2026-10-24: "Impersonate read-only for support" deferred: host-only session cookies make it non-trivial; admin can reset an owner's password instead.
+- 2026-10-24: Admin shop detail lives at `/tenants/[id]` (proxy 404s any path starting with `/shop`, so `/shops/...` can't be used).
+- 2026-10-24: Platform admin amounts (plan prices, MRR, subscription payments) are USD only; there is no shop rate at platform level.
+- 2026-10-24: Arabic terms: الصندوق for cash drawer (not درج), المحل for shop (not المتجر), سعر الصرف for the rate chip, غداً (not بكرا).
+- 2026-10-24: System-written stock notes are stored as `@key` and translated on display (`@removedFromTicket`).
+- 2026-10-24: Public /track defaults to the visitor's language cookie (EN), not the shop's default language; switch in the header.
+- 2026-10-24: Better Auth `session.create.before` hook refuses sessions for inactive users (covers direct API sign-in).
+- 2026-10-24: Proxy blocks internal paths only as whole segments (`/shop`, `/shop/…`, `/admin`, `/admin/…`), not prefixes like `/shops`.
+- 2026-10-24: Read-only banner wording covers both expired and suspended shops.
+- 2026-10-24: Demo data is generated by a deterministic script (`prisma/seed-demo.ts`, fixed PRNG seed) in time order, so stock, ticket balances and drawer totals match the app's own calculations; it only runs on an empty demo shop.
+- 2026-10-24: `pnpm db:reset` = migrate reset + seed (Prisma 7 no longer seeds on reset).
+- 2026-10-24: Production seed requires `SEED_PASSWORD` (10+ chars) and takes `SEED_ADMIN_EMAIL`; the isolation-test shop is dev-only.
+- 2026-10-24: Production = single app container behind Caddy on-demand TLS; Caddy asks `/api/tls-check` before issuing a certificate (root, admin, existing shops only). Wildcard A record, no DNS API.
+- 2026-10-24: Nightly backup container: `pg_dump -Fc` + uploads tarball at 03:00, 14 days kept in `./backups`.
+- 2026-10-24: Proxy rewrites carry a per-process random token header; the production server re-runs the proxy on the rewritten path and only token-marked internal paths pass. Rewrite protocol pinned to `http:` (the app speaks plain HTTP behind Caddy).
+- 2026-10-24: Page-level redirects use `redirectPublic()` (absolute URL from X-Forwarded-Host/Proto) because Next resolves relative redirects against the server bind address in production.
+- 2026-10-24: Build output excludes `data/`, `backups/` and `.tsx` sources from file tracing (`outputFileTracingExcludes`).
+- 2026-10-24: Screen locks: removing a lock is an explicit action (`setTicketPasscode(id, { kind: "none" })`, with confirmation); an empty passcode/pattern is rejected instead of meaning "delete". Patterns need ≥ 4 distinct dots. Changes and removals are audit-logged. (Bug: "Change lock" + Save with nothing entered silently wiped the lock.)
+- 2026-10-24: Database hosted on Supabase (free plan, eu-central-1) as plain Postgres; the app stays portable (any Postgres via DATABASE_URL). No Supabase SDK/Auth/API used.
+- 2026-10-24: App connects as a dedicated role `pos_app` (owns all tables) through the session pooler (`aws-1-eu-central-1.pooler.supabase.com:5432`), not as `postgres`.
+- 2026-10-24: TLS to Supabase is fully verified against Supabase's root CA (`certs/supabase-prod-ca-2021.crt`, env `DATABASE_CA_CERT`) via `lib/pg-config.ts`; never `rejectUnauthorized: false`.
+- 2026-10-24: All tables have RLS enabled with no policies (migration `enable_rls`): Supabase's anon/authenticated API roles can't read anything; the owner role bypasses RLS.
+- 2026-10-24: No business data in code: PlatformSetting (app name, landing contact, showcase shop, defaults for new shops), ShopPreset (intake problems, drawer pay in/out reasons, EN+AR, shop-editable), Shop.timezone + Shop.countryCode (phones, report days, date display). Code keeps only enums mirroring DB enums and UI copy in message files.
+- 2026-10-24: New shops copy templates + quick picks from PlatformSetting (`lib/shop-defaults.ts`); the code copies in `prisma/seed-defaults.ts` are seed input only.
+- 2026-10-24: Landing preview uses live data from the showcase shop (must be a demo shop, it is public); with no showcase shop the preview is hidden, never invented.
+- 2026-10-24: Permission checks for restricted sections live in route layouts (reports, settings, cash, sales, pos) so refused users get a real 404 before loading UI streams.
+- 2026-10-24: Super admin subdomain is configurable (`ADMIN_SUBDOMAIN`, default "admin") because admin.inchouf.com already serves another site.
+- 2026-10-24: inchouf.com plan: keep existing Worker sites (root, www, admin, app, wildcard) untouched; add only explicit records for POS hosts (pos-admin, each shop slug) to a Cloudflare Tunnel; never overwrite the wildcard.
+- 2026-10-24: Seeded accounts moved off "password123" to one random 20-char password (scripts/set-passwords.ts), stored only in data/credentials.txt (mode 600, gitignored).
+- 2026-10-24: inchouf.com: Cloudflare Tunnel `inchouf-pos` from this Mac → localhost:3100 (prod build). Ingress only for demo.inchouf.com and pos-admin.inchouf.com; DNS: two new CNAMEs, nothing overwritten. Existing Worker sites (root, www, admin, app, wildcard) untouched.
+- 2026-10-24: The existing Worker's route matches *.inchouf.com, which runs before DNS/tunnels; POS hosts need Worker-route exclusions (route with Worker = None) to reach the tunnel.
+- 2026-10-24: Live: Worker-route exclusions demo.inchouf.com/* and pos-admin.inchouf.com/* (Worker = None) added by the owner; both hosts now reach the tunnel. Root, www, admin, app unchanged.
+- 2026-10-24: Production redirects plain http → https in proxy.ts (x-forwarded-proto), instead of Cloudflare's zone-wide "Always Use HTTPS" which would also affect other sites on inchouf.com.
+- 2026-10-24: Security headers on every response (X-Frame-Options SAMEORIGIN, nosniff, strict-origin-when-cross-origin referrer, Permissions-Policy; HSTS in production without includeSubDomains).
+- 2026-10-24: Tests use temporary accounts (scripts/test-accounts.ts) with a random password, deleted after; their records are re-attributed to the demo owner. Better Auth's production sign-in rate limit (per IP) is kept; the smoke test waits and retries.
+- 2026-10-24: Preloaded POS ticket lines use a stable key (`ticket-<id>`) to avoid a hydration mismatch; dev allows *.localhost origins for live reload.
+- 2026-10-24: Added single-column indexes on foreign keys used for child lookups (payments/sale items/ticket items/status logs/notes/stock movements/sales/cash movements/tickets).
+- 2026-10-25: Hosting moved from this Mac (Cloudflare Tunnel) to Vercel's free Hobby plan: always on, no card. Functions in fra1 next to Supabase; runtime DB connection via Supabase transaction pooler (6543); CA cert passed as PEM text in DATABASE_CA_CERT. Hobby is non-commercial: upgrade or move to a VPS before paying customers.
+- 2026-10-25: Cloudflare Workers free plan rejected (10 ms CPU and 3 MB limits are too small for this app); Oracle Always Free rejected (needs a card with funds).
+- 2026-10-25: Shop logos stored in Postgres (ShopLogo, bytea) instead of local disk, so the app runs on serverless hosts; served from /files/logo as before.
+- 2026-10-25: demo/pos-admin DNS = CNAME cname.vercel-dns.com, DNS only. inchouf.com stays on Cloudflare (other Worker sites unaffected). The old tunnel and its Worker-route exclusions are unused.
+- 2026-10-25: proxy.ts only pins rewrite protocol to http when not on Vercel (Vercel is https end to end).
+- 2026-10-25: Shop web addresses are automatic: creating or renaming a shop adds <slug>.inchouf.com to the Vercel project and a DNS-only CNAME to cname.vercel-dns.com on Cloudflare (`lib/domains.ts`). Never overwrites an existing DNS record; only deletes records it created (comment "InChouf POS shop (auto)"). Admin shop page shows status + a "Set up web address" button. Needs VERCEL_API_TOKEN + CLOUDFLARE_API_TOKEN (created by the owner; the session's permissions don't allow Claude to mint access keys) plus VERCEL_PROJECT_ID/VERCEL_TEAM_ID/CLOUDFLARE_ZONE_ID (set).
+- 2026-10-25: Admin "Delete shop" (type the slug to confirm): removes the shop's web address (Vercel domain + our Cloudflare record) then deletes all shop data in one transaction (`lib/shop-delete.ts`, children first). The showcase shop can't be deleted. Verified on a full demo shop locally.
+- 2026-10-25: Automatic shop addresses verified live: creating "autotest" in the admin added the Vercel domain and the DNS-only CNAME by itself; HTTPS (Let's Encrypt) issued within a minute.
