@@ -603,6 +603,7 @@
     "viewTable": "جدول",
     "board": "لوحة التصليحات",
     "closedColumn": "مغلقة (آخر 3 أيام)",
+    "viewAllClosed": "عرض {count} أخرى",
     "dropHere": "أفلت التذكرة هنا",
     "columnEmpty": "لا شيء هنا",
     "moveTo": "نقل {label} إلى…",

@@ -603,6 +603,7 @@
     "viewTable": "Table",
     "board": "Repairs board",
     "closedColumn": "Closed (last 3 days)",
+    "viewAllClosed": "View {count} more",
     "dropHere": "Drop a ticket here",
     "columnEmpty": "Nothing here",
     "moveTo": "Move {label} to…",

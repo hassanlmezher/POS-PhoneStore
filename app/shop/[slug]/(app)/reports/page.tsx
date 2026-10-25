@@ -58,7 +58,7 @@ export default async function ReportsPage({ params, searchParams }: PageProps<"/
       {tab === "overview" && <OverviewSection ctx={ctx} range={range} />}
       {tab === "repairs" && <RepairsSection ctx={ctx} range={range} />}
       {tab === "products" && <ProductsSection ctx={ctx} range={range} />}
-      {tab === "balances" && <BalancesSection ctx={ctx} />}
+      {tab === "balances" && <BalancesSection ctx={ctx} page={Math.max(1, Number(sp.page) || 1)} params={sp} />}
     </div>
   );
 }

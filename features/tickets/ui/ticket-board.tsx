@@ -3,13 +3,12 @@
 import { startTransition, useOptimistic, useState } from "react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
-import { ArrowRightLeft, CalendarClock, GripVertical, Inbox } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, CalendarClock, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,9 +51,40 @@ const dotClasses: Record<string, string> = {
   CLOSED: "bg-status-picked-up-foreground",
 };
 
-type BoardProps = { cards: BoardCard[]; canMove: boolean; rate: number; rounding: number };
+type BoardProps = {
+  cards: BoardCard[];
+  canMove: boolean;
+  rate: number;
+  rounding: number;
+  /** Closed tickets not shown in the Closed column (they're in the table view at closedHref). */
+  closedMore: number;
+  closedHref: string;
+};
 
-export function TicketBoard({ cards, canMove, rate, rounding }: BoardProps) {
+// Icons repeated on every card are drawn once and referenced with <use> (a busy board has 70+ cards).
+const SPRITE = { move: ArrowRightLeft, due: CalendarClock } as const;
+
+function SpriteDefs() {
+  return (
+    <svg aria-hidden className="hidden">
+      {Object.entries(SPRITE).map(([key, Icon]) => (
+        <symbol key={key} id={`tb-${key}`} viewBox="0 0 24 24">
+          <Icon />
+        </symbol>
+      ))}
+    </svg>
+  );
+}
+
+function SpriteIcon({ name, className }: { name: keyof typeof SPRITE; className: string }) {
+  return (
+    <svg aria-hidden className={className}>
+      <use href={`#tb-${name}`} />
+    </svg>
+  );
+}
+
+export function TicketBoard({ cards, canMove, rate, rounding, closedMore, closedHref }: BoardProps) {
   const t = useTranslations("tickets");
   const ts = useTranslations("status");
   const [optimistic, move] = useOptimistic(cards, (state, { id, to }: { id: string; to: TicketStatusValue }) =>
@@ -79,6 +109,7 @@ export function TicketBoard({ cards, canMove, rate, rounding }: BoardProps) {
 
   return (
     <div className="-mx-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" role="region" aria-label={t("board")} tabIndex={0}>
+      <SpriteDefs />
       <div className="flex w-max snap-x snap-mandatory gap-3 sm:gap-4">
         {COLUMNS.map((col) => {
           const items = optimistic.filter((c) => col.statuses.includes(c.status));
@@ -138,6 +169,15 @@ export function TicketBoard({ cards, canMove, rate, rounding }: BoardProps) {
                   />
                 ))}
               </ol>
+              {col.key === "CLOSED" && closedMore > 0 && (
+                <Link
+                  href={closedHref}
+                  className="mx-2 mb-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg text-sm font-medium text-primary hover:bg-card"
+                >
+                  {t("viewAllClosed", { count: closedMore })}
+                  <ArrowRight aria-hidden className="size-4 rtl:rotate-180" />
+                </Link>
+              )}
             </section>
           );
         })}
@@ -178,7 +218,7 @@ function BoardCardView({
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        "group relative rounded-lg border bg-card p-3 shadow-card transition-[opacity,box-shadow] hover:shadow-pop",
+        "relative rounded-lg border bg-card p-3 shadow-card transition-[opacity,box-shadow] hover:shadow-pop",
         canMove && "cursor-grab active:cursor-grabbing",
         dragging && "opacity-50",
       )}
@@ -200,10 +240,11 @@ function BoardCardView({
         </div>
         {canMove && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="relative z-10 -me-1 -mt-1 text-muted-foreground" aria-label={t("moveTo", { label: card.label })}>
-                <ArrowRightLeft />
-              </Button>
+            <DropdownMenuTrigger
+              className="relative z-10 -me-1 -mt-1 inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/40"
+              aria-label={t("moveTo", { label: card.label })}
+            >
+              <SpriteIcon name="move" className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{t("moveToLabel")}</DropdownMenuLabel>
@@ -217,7 +258,6 @@ function BoardCardView({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        {canMove && <GripVertical aria-hidden className="hidden size-4 shrink-0 text-subtle-foreground opacity-0 group-hover:opacity-100 lg:block" />}
       </div>
       {card.balanceUsdCents > 0 && (
         <div className="mt-2 flex items-baseline gap-2 text-xs">
@@ -228,7 +268,7 @@ function BoardCardView({
       <div className="mt-3 flex min-h-6 items-center gap-2 text-xs">
         {card.promisedAt && (
           <span className={cn("inline-flex items-center gap-1", card.overdue ? "font-medium text-destructive" : "text-muted-foreground")}>
-            <CalendarClock aria-hidden className="size-3.5" />
+            <SpriteIcon name="due" className="size-3.5" />
             {format.dateTime(card.promisedAt, { month: "short", day: "numeric" })}
             {card.overdue && <span>· {t("overdue")}</span>}
           </span>

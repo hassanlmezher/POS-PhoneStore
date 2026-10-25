@@ -104,21 +104,24 @@ export async function listTickets(ctx: ShopContext, f: TicketFilters) {
 }
 
 /** Kanban: every open ticket, plus tickets closed in the last 3 days. */
+/** Cards in the board's Closed column; the rest are a link to the table view (keeps busy boards light). */
+export const BOARD_CLOSED_LIMIT = 12;
+
 export async function boardTickets(ctx: ShopContext, q = "") {
   const since = new Date(Date.now() - 3 * 86_400_000);
-  const rows = await ctx.db.ticket.findMany({
-    where: {
-      AND: [
-        ticketAccessWhere(ctx.user),
-        ticketSearchWhere(q),
-        { OR: [{ status: { notIn: [...CLOSED_STATUSES] } }, { updatedAt: { gte: since } }] },
-      ],
-    },
-    select: ticketCardSelect,
-    orderBy: [{ promisedAt: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
-    take: 500,
-  });
-  return rows.map(toCard);
+  const base = [ticketAccessWhere(ctx.user), ticketSearchWhere(q)];
+  const closedWhere = { AND: [...base, { status: { in: [...CLOSED_STATUSES] } }, { updatedAt: { gte: since } }] };
+  const [open, closed, closedTotal] = await Promise.all([
+    ctx.db.ticket.findMany({
+      where: { AND: [...base, { status: { notIn: [...CLOSED_STATUSES] } }] },
+      select: ticketCardSelect,
+      orderBy: [{ promisedAt: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+      take: 500,
+    }),
+    ctx.db.ticket.findMany({ where: closedWhere, select: ticketCardSelect, orderBy: { updatedAt: "desc" }, take: BOARD_CLOSED_LIMIT }),
+    ctx.db.ticket.count({ where: closedWhere }),
+  ]);
+  return { cards: [...open, ...closed].map(toCard), closedMore: Math.max(0, closedTotal - closed.length) };
 }
 
 export async function getTicketByNumber(ctx: ShopContext, number: number) {

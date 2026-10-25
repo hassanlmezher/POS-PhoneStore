@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ChartColumn, Download, HandCoins, MessageCircle, Package, Percent, ReceiptText, ShoppingBag, UserRound, Wallet, Wrench } from "lucide-react";
+import { ChartColumn, Download, HandCoins, Package, Percent, ReceiptText, ShoppingBag, UserRound, Wallet, Wrench } from "lucide-react";
 import { BarChart } from "@/components/bar-chart";
 import { EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
 import { SectionCard } from "@/components/section-card";
@@ -10,15 +11,14 @@ import { StatTile } from "@/components/stat-tile";
 import { StatusBadge, type TicketStatus } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BalancesList } from "@/features/reports/ui/balances-list";
 import { bestSellers, outstandingBalances, profitSummary, repairsByStatus, revenueByTechnician } from "@/features/reports/queries";
-import { trackUrl } from "@/features/tickets/notify";
 import { startOfDay, type DayRange } from "@/lib/dates";
-import { formatMoney, toLbp } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { formatTicketNumber } from "@/lib/numbering";
 import { formatPhone } from "@/lib/phone";
 import type { ShopContext } from "@/lib/tenant";
 import { cn } from "@/lib/utils";
-import { fillTemplate, waLink } from "@/lib/whatsapp";
 
 type Props = { ctx: ShopContext; range: DayRange };
 
@@ -274,39 +274,20 @@ export async function ProductsSection({ ctx, range }: Props) {
   );
 }
 
-export async function BalancesSection({ ctx }: { ctx: ShopContext }) {
+/** Customers per page in the balances list (totals above it always cover everyone). */
+const BALANCES_PAGE_SIZE = 25;
+
+export async function BalancesSection({ ctx, page = 1, params }: { ctx: ShopContext; page?: number; params?: Record<string, string | string[] | undefined> }) {
   const { shop } = ctx;
-  const [t, data, templates] = await Promise.all([
+  const [t, data, templateCount] = await Promise.all([
     getTranslations("reports"),
     outstandingBalances(shop.id),
-    ctx.db.messageTemplate.findMany({ where: { key: "BALANCE_REMINDER" }, select: { locale: true, body: true } }),
+    ctx.db.messageTemplate.count({ where: { key: "BALANCE_REMINDER" } }),
   ]);
   const money = (c: number, usdClassName?: string) => (
     <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} usdClassName={usdClassName} lbpClassName="text-xs" />
   );
-
-  // One reminder per customer: what they owe now, else what's due at pickup.
-  const reminder = (r: (typeof data.rows)[number]) => {
-    const body = templates.find((x) => x.locale === r.locale)?.body ?? templates[0]?.body;
-    if (!body) return null;
-    const amount = r.owedUsdCents > 0 ? r.owedUsdCents : r.dueOnPickupUsdCents;
-    const refs = [
-      ...r.tickets.filter((x) => (r.owedUsdCents > 0 ? x.status === "PICKED_UP" : true)).map((x) => formatTicketNumber(shop.ticketPrefix, x.number)),
-      ...(r.owedUsdCents > 0 ? r.sales.map((s) => `#${s.number}`) : []),
-    ];
-    const first = r.tickets[0] ? formatTicketNumber(shop.ticketPrefix, r.tickets[0].number) : "";
-    return waLink(
-      r.phone,
-      fillTemplate(body, {
-        customer: r.name,
-        ticket: refs.join(", "),
-        device: "",
-        balance: `${formatMoney(amount, "USD")} (${formatMoney(toLbp(amount, shop.exchangeRate, shop.lbpRounding), "LBP")})`,
-        shop: shop.name,
-        trackUrl: first ? trackUrl(shop.slug, first) : "",
-      }),
-    );
-  };
+  const pageRows = data.rows.slice((page - 1) * BALANCES_PAGE_SIZE, page * BALANCES_PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-6">
@@ -326,68 +307,24 @@ export async function BalancesSection({ ctx }: { ctx: ShopContext }) {
         {data.rows.length === 0 ? (
           <EmptyState icon={ReceiptText} title={t("noBalancesTitle")} body={t("noBalancesBody")} />
         ) : (
-          <ul className="divide-y">
-            {data.rows.map((r) => {
-              const wa = reminder(r);
-              return (
-                <li key={r.customerId} className="flex flex-col gap-3 px-4 py-4 sm:px-6 xl:flex-row xl:items-center">
-                  <div className="min-w-0 xl:w-56 xl:shrink-0">
-                    <Link href={`/customers/${r.customerId}`} className="font-medium hover:underline focus-visible:underline">
-                      {r.name}
-                    </Link>
-                    <p className="text-sm text-muted-foreground">
-                      <Ltr>{formatPhone(r.phone, ctx.shop.countryCode)}</Ltr>
-                    </p>
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-                    {r.tickets.map((x) => (
-                      <Link
-                        key={x.id}
-                        href={`/tickets/${x.number}`}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 text-sm whitespace-nowrap transition-colors hover:bg-accent"
-                      >
-                        <Ltr className="font-medium">{formatTicketNumber(shop.ticketPrefix, x.number)}</Ltr>
-                        <StatusBadge status={x.status as TicketStatus} />
-                        <Ltr className="text-muted-foreground">{formatMoney(x.balanceUsdCents, "USD")}</Ltr>
-                      </Link>
-                    ))}
-                    {r.sales.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/sales/${s.number}`}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 text-sm whitespace-nowrap transition-colors hover:bg-accent"
-                      >
-                        <span className="font-medium">
-                          {t("sale")} <Ltr>#{s.number}</Ltr>
-                        </span>
-                        <Ltr className="text-muted-foreground">{formatMoney(s.balanceUsdCents, "USD")}</Ltr>
-                      </Link>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between gap-4 xl:shrink-0 xl:justify-end">
-                    <dl className="flex gap-4 text-sm">
-                      <div>
-                        <dt className="text-xs text-muted-foreground">{t("owedNow")}</dt>
-                        <dd>{money(r.owedUsdCents, r.owedUsdCents > 0 ? "text-warning" : "text-subtle-foreground")}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">{t("dueOnPickup")}</dt>
-                        <dd>{money(r.dueOnPickupUsdCents)}</dd>
-                      </div>
-                    </dl>
-                    {wa && (
-                      <Button variant="outline" size="icon" asChild>
-                        <a href={wa} target="_blank" rel="noopener noreferrer" aria-label={t("sendReminder", { name: r.name })} title={t("sendReminder", { name: r.name })}>
-                          <MessageCircle className="text-success" />
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <BalancesList
+            canRemind={templateCount > 0}
+            rate={shop.exchangeRate}
+            rounding={shop.lbpRounding}
+            rows={pageRows.map((r) => ({
+              customerId: r.customerId,
+              name: r.name,
+              phone: formatPhone(r.phone, shop.countryCode),
+              owedUsdCents: r.owedUsdCents,
+              dueOnPickupUsdCents: r.dueOnPickupUsdCents,
+              tickets: r.tickets.map((x) => ({ ...x, label: formatTicketNumber(shop.ticketPrefix, x.number) })),
+              sales: r.sales,
+            }))}
+          />
         )}
+        <div className="border-t empty:hidden">
+          <Pagination page={page} pageSize={BALANCES_PAGE_SIZE} total={data.rows.length} basePath="/reports" params={params} />
+        </div>
       </SectionCard>
     </div>
   );

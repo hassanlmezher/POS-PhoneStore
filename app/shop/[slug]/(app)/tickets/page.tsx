@@ -2,18 +2,15 @@ import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Columns3, Plus, Rows3, SearchX, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { Ltr } from "@/components/ltr";
-import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
-import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UrlSearchInput } from "@/components/url-search-input";
 import { boardTickets, listTickets, listTechnicians, type TicketCard } from "@/features/tickets/queries";
-import { TICKET_STATUSES, type TicketStatusValue } from "@/features/tickets/schema";
+import { CLOSED_STATUSES, TICKET_STATUSES, type TicketStatusValue } from "@/features/tickets/schema";
 import { TicketBoard, type BoardCard } from "@/features/tickets/ui/ticket-board";
 import { TicketFilters } from "@/features/tickets/ui/ticket-filters";
+import { TicketTable } from "@/features/tickets/ui/ticket-table";
 import { isOverdue } from "@/features/tickets/ui/ticket-utils";
 import { formatTicketNumber } from "@/lib/numbering";
 import { can } from "@/lib/permissions";
@@ -100,7 +97,8 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
   );
 
   if (view === "board") {
-    const cards = (await boardTickets(ctx, q)).map((c) => toBoardCard(c, shop.ticketPrefix));
+    const board = await boardTickets(ctx, q);
+    const cards = board.cards.map((c) => toBoardCard(c, shop.ticketPrefix));
     return (
       <div className="flex flex-col gap-6">
         {header}
@@ -124,7 +122,14 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
             />
           </div>
         ) : (
-          <TicketBoard cards={cards} canMove={canMove} rate={shop.exchangeRate} rounding={shop.lbpRounding} />
+          <TicketBoard
+            cards={cards}
+            canMove={canMove}
+            rate={shop.exchangeRate}
+            rounding={shop.lbpRounding}
+            closedMore={board.closedMore}
+            closedHref={`/tickets?view=table&status=${CLOSED_STATUSES.join(",")}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+          />
         )}
       </div>
     );
@@ -154,56 +159,23 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
           )
         ) : (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>{t("colTicket")}</TableHead>
-                  <TableHead>{t("colDevice")}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t("colCustomer")}</TableHead>
-                  <TableHead>{t("colStatus")}</TableHead>
-                  <TableHead className="hidden lg:table-cell">{t("technician")}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t("colPromised")}</TableHead>
-                  <TableHead className="text-end">{t("balance")}</TableHead>
-                  <TableHead className="hidden xl:table-cell">{t("colCreated")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => {
-                  const overdue = isOverdue(r.promisedAt, r.status);
-                  return (
-                    <TableRow key={r.id} className="relative">
-                      <TableCell className="font-semibold whitespace-nowrap">
-                        <Link href={`/tickets/${r.number}`} className="outline-none after:absolute after:inset-0 focus-visible:underline">
-                          <Ltr>{formatTicketNumber(shop.ticketPrefix, r.number)}</Ltr>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="max-w-56">
-                        <p className="truncate font-medium">{r.device}</p>
-                        <p className="truncate text-xs text-muted-foreground md:hidden">{r.customer.name}</p>
-                      </TableCell>
-                      <TableCell className="hidden max-w-48 truncate md:table-cell">{r.customer.name}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={r.status} />
-                      </TableCell>
-                      <TableCell className="hidden whitespace-nowrap text-muted-foreground lg:table-cell">{r.assignedTo?.name ?? t("unassigned")}</TableCell>
-                      <TableCell className={cn("hidden whitespace-nowrap md:table-cell", overdue ? "font-medium text-destructive" : "text-muted-foreground")}>
-                        {r.promisedAt ? format.dateTime(r.promisedAt, { dateStyle: "medium" }) : "—"}
-                      </TableCell>
-                      <TableCell className="text-end">
-                        {r.balanceUsdCents > 0 ? (
-                          <Money usdCents={r.balanceUsdCents} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end rtl:items-start" />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden whitespace-nowrap text-muted-foreground xl:table-cell">
-                        {format.dateTime(r.createdAt, { dateStyle: "medium" })}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <TicketTable
+              rate={shop.exchangeRate}
+              rounding={shop.lbpRounding}
+              rows={rows.map((r) => ({
+                id: r.id,
+                number: r.number,
+                label: formatTicketNumber(shop.ticketPrefix, r.number),
+                device: r.device,
+                customer: r.customer.name,
+                status: r.status,
+                tech: r.assignedTo?.name ?? null,
+                promised: r.promisedAt ? format.dateTime(r.promisedAt, { dateStyle: "medium" }) : null,
+                overdue: isOverdue(r.promisedAt, r.status),
+                balanceUsdCents: r.balanceUsdCents,
+                created: format.dateTime(r.createdAt, { dateStyle: "medium" }),
+              }))}
+            />
             <div className="border-t">
               <Pagination page={page} pageSize={pageSize} total={total} basePath="/tickets" params={sp} />
             </div>
