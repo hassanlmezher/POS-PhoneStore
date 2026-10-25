@@ -1,9 +1,10 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Layers, LogOut, Settings2, ShieldCheck, Store } from "lucide-react";
+import { Layers, LogOut, Settings2, Store } from "lucide-react";
 import { LanguageSwitch } from "@/components/app-shell/language-switch";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/features/auth/actions";
@@ -26,9 +27,7 @@ export function AdminShell({ appName, children }: { appName: string; children: R
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <ShieldCheck className="size-5" aria-hidden />
-            </span>
+            <BrandLogo />
             <span className="hidden flex-col leading-tight sm:flex">
               <span className="text-sm font-semibold">{appName}</span>
               <span className="text-xs text-muted-foreground">{t("platformAdmin")}</span>

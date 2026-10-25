@@ -78,6 +78,7 @@ _(Keep this list updated as they are created.)_
 - `components/app-shell/global-search.tsx` (uses `features/search/actions.ts`).
 - `features/tickets/ui/*`: intake-form, customer-picker, device-picker, ticket-board, warranty-badge, detail/*; `features/customers/ui/customer-dialog.tsx`.
 - `lib/use-debounced.ts`; `lib/phone.ts` `formatPhone()`; `lib/numbering.ts` (next ticket/sale number, format/parse label); `lib/stock.ts` `moveStock()`; `lib/whatsapp.ts` (`fillTemplate`, `waLink`); `features/tickets/money.ts` (charge/paid/balance, warrantyUntil).
+- `components/brand-logo.tsx`: `<BrandLogo className alt? priority? />`, the product logo (`public/brand/logo.svg`; PNGs 180/192/512 alongside; `app/icon.svg`, `app/apple-icon.png`, `app/manifest.ts`).
 - `components/link-tabs.tsx` (URL-driven tabs with count badge), `components/stock-level.tsx` (`<StockLevel qty threshold />`, `stockState()`). `ConfirmDialog` also takes `children`, `confirmDisabled`, `onOpenChange`; `CustomerDialog` takes `defaults`, `onCreated`.
 - `features/inventory/ui/*` (inventory-table, product-dialog, model-multi-select, adjust-stock-form, print-label-button), `features/inventory/margin.ts`; `features/pos/ui/*` (pos-screen, cart.ts live totals, cart-line, payment-rows, pos-customer, done-dialog, void-sale-button).
 - `features/pos/money.ts`: `tenderedUsdCents`, `changeDue` (LBP change computed in pounds), `saleBalance` (±1 cent = 0). `lib/barcode.ts`: `code128Svg`, `canEncodeCode128`.

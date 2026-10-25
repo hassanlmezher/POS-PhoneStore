@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 
 /** Centered eyebrow + h2 + optional subtitle used by every landing section. */
@@ -29,16 +30,8 @@ export function Container({ className, ...props }: React.ComponentProps<"div">) 
   return <div className={cn("mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8", className)} {...props} />;
 }
 
+/** Product logo next to the product name (the name is printed beside it, so the image is decorative). */
 export function BrandMark({ name, className }: { name: string; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-base font-semibold text-primary-foreground shadow-card",
-        className,
-      )}
-    >
-      {name.slice(0, 1)}
-    </span>
-  );
+  void name;
+  return <BrandLogo className={className} priority />;
 }

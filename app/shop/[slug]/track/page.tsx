@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/brand-logo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -88,7 +89,8 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
         )}
       </main>
 
-      <footer className="pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-xs text-subtle-foreground">
+      <footer className="flex items-center justify-center gap-2 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-xs text-subtle-foreground">
+        <BrandLogo className="size-5" />
         {t("poweredBy", { app: platform.appName })}
       </footer>
     </div>

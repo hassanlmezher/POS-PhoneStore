@@ -1,8 +1,9 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CircleAlert, Eye, EyeOff, LoaderCircle, ShieldCheck } from "lucide-react";
+import { CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,9 +31,13 @@ export function LoginForm({ variant, shopName, slug }: LoginFormProps) {
     <main className="flex min-h-svh items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-pop">
-            {variant === "shop" && shopName ? initials(shopName) : <ShieldCheck className="size-6" aria-hidden />}
-          </div>
+          {variant === "shop" && shopName ? (
+            <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-pop">
+              {initials(shopName)}
+            </div>
+          ) : (
+            <BrandLogo className="size-12 shadow-pop rounded-[13px]" priority />
+          )}
         </div>
         <Card className="gap-6 py-8">
           <CardHeader className="px-6 text-center sm:px-8">

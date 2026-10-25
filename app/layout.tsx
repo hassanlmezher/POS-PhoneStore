@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
@@ -13,6 +13,8 @@ const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
   weight: ["400", "500", "600", "700"],
 });
+
+export const viewport: Viewport = { themeColor: "#2347E8" };
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getPlatformSettings()).appName };
