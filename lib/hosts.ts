@@ -15,6 +15,23 @@ export type HostKind =
   | { kind: "shop"; slug: string }
   | { kind: "unknown" };
 
+/**
+ * Set by proxy.ts on its internal rewrite: the tenant resolved from the public Host ("admin" or
+ * "shop:<slug>"). Server code reads this first because on a standalone server (Docker) the rewritten
+ * request's Host is the app server's own address. Client copies are always overwritten or removed.
+ */
+export const TENANT_HEADER = "x-pos-tenant";
+
+export function tenantHeaderValue(host: HostKind): string | null {
+  return host.kind === "admin" ? "admin" : host.kind === "shop" ? `shop:${host.slug}` : null;
+}
+
+export function parseTenantHeader(value: string | null): HostKind | null {
+  if (value === "admin") return { kind: "admin" };
+  const slug = value?.startsWith("shop:") ? value.slice(5) : null;
+  return slug && isValidSlug(slug) ? { kind: "shop", slug } : null;
+}
+
 /** Classify a Host header. `<slug>.localhost:3000` works in dev without config. */
 export function parseHost(rawHost: string | null): HostKind {
   const host = (rawHost ?? "").toLowerCase();

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { encrypt, decrypt } from "@/lib/crypto";
+import { lockRows, retryOnConflict } from "@/lib/locks";
 import { toUsdCents } from "@/lib/money";
 import { nextTicketNumber } from "@/lib/numbering";
 import { normalizePhone } from "@/lib/phone";
@@ -115,7 +116,8 @@ export async function createTicket(input: TicketInput): Promise<ActionResult<{ n
     if (!tech) return { ok: false, error: "invalid", fieldErrors: { assignedToId: "invalid" } };
   }
 
-  const number = await prisma.$transaction(async (tx) => {
+  // Retried if another ticket created the same new customer/device at the same moment (the retry reuses it).
+  const number = await retryOnConflict(() => prisma.$transaction(async (tx) => {
     let customerId = v.customerId;
     if (customerId) {
       const c = await tx.customer.findFirst({ where: { id: customerId, shopId }, select: { id: true } });
@@ -167,7 +169,7 @@ export async function createTicket(input: TicketInput): Promise<ActionResult<{ n
     });
     if (v.deposit) await recordPayment(tx, ctx, ticket.id, v.deposit);
     return number;
-  });
+  }));
 
   refreshShop();
   return { ok: true, number };
@@ -185,16 +187,20 @@ export async function changeTicketStatus(
   const shopId = ctx.shop.id;
 
   await prisma.$transaction(async (tx) => {
+    // Re-read under a lock so the log's "from" is right when two people change the status at once.
+    await lockRows(tx, "Ticket", shopId, [ticketId]);
+    const { status: from } = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId, shopId }, select: { status: true } });
+    if (from === to) return;
     await tx.ticket.update({
       where: { id: ticketId, shopId },
       data: {
         status: to,
         // Warranty starts at pickup; moving back out of Picked up clears it.
-        pickedUpAt: to === "PICKED_UP" ? new Date() : ticket.status === "PICKED_UP" ? null : undefined,
+        pickedUpAt: to === "PICKED_UP" ? new Date() : from === "PICKED_UP" ? null : undefined,
       },
     });
     await tx.ticketStatusLog.create({
-      data: { shopId, ticketId, from: ticket.status, to, userId: ctx.user.id, note: note?.trim() || null },
+      data: { shopId, ticketId, from, to, userId: ctx.user.id, note: note?.trim() || null },
     });
   });
   refreshShop();
@@ -286,6 +292,8 @@ export async function addTicketItem(ticketId: string, input: TicketItemInput): P
   const shopId = ctx.shop.id;
 
   await prisma.$transaction(async (tx) => {
+    // Serialize item changes per ticket so the recomputed total includes every line.
+    await lockRows(tx, "Ticket", shopId, [ticketId]);
     let unitCostUsdCents = 0;
     if (v.kind === "PART" && v.productId) {
       const product = await tx.product.findFirst({
@@ -326,11 +334,15 @@ export async function addTicketItem(ticketId: string, input: TicketItemInput): P
 export async function removeTicketItem(itemId: string): Promise<ActionResult> {
   const ctx = await requireActionShop("tickets.items");
   const shopId = ctx.shop.id;
-  const item = await ctx.db.ticketItem.findUnique({ where: { id: itemId } });
-  if (!item) return { ok: false, error: "notFound" };
-  await accessibleTicket(ctx, item.ticketId);
+  const found = await ctx.db.ticketItem.findUnique({ where: { id: itemId }, select: { ticketId: true } });
+  if (!found) return { ok: false, error: "notFound" };
+  await accessibleTicket(ctx, found.ticketId);
 
-  await prisma.$transaction(async (tx) => {
+  const removed = await prisma.$transaction(async (tx) => {
+    await lockRows(tx, "Ticket", shopId, [found.ticketId]);
+    // Re-read under the lock: a double-click's second request finds the item already gone.
+    const item = await tx.ticketItem.findUnique({ where: { id: itemId, shopId } });
+    if (!item) return false;
     if (item.productId) {
       await moveStock(tx, {
         shopId,
@@ -343,7 +355,9 @@ export async function removeTicketItem(itemId: string): Promise<ActionResult> {
     }
     await tx.ticketItem.delete({ where: { id: itemId, shopId } });
     await recomputeTotal(tx, shopId, item.ticketId);
+    return true;
   });
+  if (!removed) return { ok: false, error: "notFound" };
   refreshShop();
   return { ok: true };
 }

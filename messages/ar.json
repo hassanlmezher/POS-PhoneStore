@@ -805,6 +805,8 @@
     "fromEstimate": "حسب السعر التقديري",
     "paid": "المدفوع",
     "balance": "المتبقي",
+    "refundDue": "مبلغ يُعاد للزبون",
+    "refundDueHint": "دفع أكثر من السعر النهائي",
     "recordPayment": "تسجيل دفعة",
     "amount": "المبلغ",
     "currency": "العملة",

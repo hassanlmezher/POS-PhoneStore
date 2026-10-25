@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { lockRows } from "@/lib/locks";
 import { toUsdCents } from "@/lib/money";
 import { formatTicketNumber, nextSaleNumber, parseTicketNumber } from "@/lib/numbering";
 import { phoneSearchDigits } from "@/lib/phone";
@@ -31,6 +32,8 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
       // ---- Resolve lines with database prices ----
       const productIds = v.lines.flatMap((l) => (l.kind === "PRODUCT" ? [l.productId] : []));
       const ticketIds = v.lines.flatMap((l) => (l.kind === "TICKET_BALANCE" ? [l.ticketId] : []));
+      // Two tills paying the same repair at once: the second waits here, then sees the first payment.
+      await lockRows(tx, "Ticket", shopId, ticketIds);
       const products = await tx.product.findMany({
         where: { shopId, id: { in: productIds }, active: true },
         select: { id: true, name: true, priceUsdCents: true, costUsdCents: true },
@@ -195,8 +198,10 @@ export async function voidSale(saleId: string, reason: string): Promise<{ ok: bo
   if (sale.status === "VOIDED") return { ok: false, error: "alreadyVoided" };
   if (!reason.trim()) return { ok: false, error: "reasonRequired" };
 
-  await prisma.$transaction(async (tx) => {
-    await tx.sale.update({ where: { id: saleId, shopId }, data: { status: "VOIDED" } });
+  const voided = await prisma.$transaction(async (tx) => {
+    // Only one of several simultaneous voids (double-click, two owners) flips the status and returns stock.
+    const flipped = await tx.sale.updateMany({ where: { id: saleId, shopId, status: "COMPLETED" }, data: { status: "VOIDED" } });
+    if (flipped.count === 0) return false;
     for (const i of sale.items) {
       if (i.productId) {
         await moveStock(tx, {
@@ -213,7 +218,9 @@ export async function voidSale(saleId: string, reason: string): Promise<{ ok: bo
     await tx.auditLog.create({
       data: { shopId, userId: ctx.user.id, action: "sale.void", entity: "Sale", entityId: saleId, meta: { reason: reason.trim(), number: sale.number } },
     });
+    return true;
   });
+  if (!voided) return { ok: false, error: "alreadyVoided" };
   refreshShop();
   return { ok: true };
 }

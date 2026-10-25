@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma, tenantDb } from "@/lib/db";
-import { DEV_SHOP_COOKIE, parseHost } from "@/lib/hosts";
+import { DEV_SHOP_COOKIE, TENANT_HEADER, parseHost, parseTenantHeader, type HostKind } from "@/lib/hosts";
 import { redirectPublic } from "@/lib/public-url";
 import { can, type Permission, type Role } from "@/lib/permissions";
 import { isReadOnly } from "@/lib/subscription";
@@ -49,9 +49,15 @@ export async function requirePermission(slug: string, permission: Permission) {
   return ctx;
 }
 
+/** Tenant of the current request: the proxy's rewrite header first (see TENANT_HEADER), else the Host. */
+export async function getRequestHost(): Promise<HostKind> {
+  const h = await headers();
+  return parseTenantHeader(h.get(TENANT_HEADER)) ?? parseHost(h.get("host"));
+}
+
 /** Shop slug for the current request, from the Host header (or the dev `?shop=` cookie). */
 export async function getRequestSlug(): Promise<string | null> {
-  const host = parseHost((await headers()).get("host"));
+  const host = await getRequestHost();
   if (host.kind === "shop") return host.slug;
   if (host.kind === "root" && process.env.NODE_ENV !== "production") {
     return (await cookies()).get(DEV_SHOP_COOKIE)?.value ?? null;
@@ -65,7 +71,7 @@ export async function getRequestSlug(): Promise<string | null> {
  */
 export async function requireActionShop(permission?: Permission, opts: { write?: boolean } = { write: true }) {
   const slug = await getRequestSlug();
-  if (!slug) throw new Error("No shop for this request");
+  if (!slug) throw new Error(`No shop for this request (host: ${(await headers()).get("host")})`);
   const ctx = await requireShop(slug);
   if (permission && !can(ctx.user.role, permission)) throw new Error("Forbidden");
   if (opts.write !== false && ctx.readOnly) throw new Error("Shop is read-only");

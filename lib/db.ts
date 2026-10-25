@@ -5,7 +5,9 @@ import { pgConfig } from "@/lib/pg-config";
 
 function createClient() {
   const adapter = new PrismaPg(pgConfig());
-  return new PrismaClient({ adapter });
+  // Busy moments (several tills at once, a far-away database) shouldn't fail with "Unable to start a
+  // transaction": wait longer for a free connection than Prisma's 2 s / 5 s defaults.
+  return new PrismaClient({ adapter, transactionOptions: { maxWait: 10_000, timeout: 15_000 } });
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: ReturnType<typeof createClient> };

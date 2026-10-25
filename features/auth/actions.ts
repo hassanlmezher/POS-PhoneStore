@@ -5,7 +5,7 @@ import { APIError } from "better-auth/api";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { parseHost } from "@/lib/hosts";
+import { getRequestHost } from "@/lib/tenant";
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -22,7 +22,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   if (!parsed.success) return { error: "invalid" };
 
   const h = await headers();
-  const host = parseHost(h.get("host"));
+  const host = await getRequestHost();
   const user = await prisma.user.findUnique({
     where: { email: parsed.data.email },
     select: { shopId: true, isSuperAdmin: true, active: true, shop: { select: { slug: true } } },

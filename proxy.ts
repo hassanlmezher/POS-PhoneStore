@@ -1,5 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_PATH, DEV_SHOP_COOKIE, SHOP_PATH, isValidSlug, parseHost } from "@/lib/hosts";
+import {
+  ADMIN_PATH,
+  DEV_SHOP_COOKIE,
+  SHOP_PATH,
+  TENANT_HEADER,
+  isValidSlug,
+  parseHost,
+  tenantHeaderValue,
+  type HostKind,
+} from "@/lib/hosts";
 
 // Resolves the tenant from the Host header and rewrites to internal route groups:
 //   <slug>.ROOT_DOMAIN/x  → /shop/<slug>/x
@@ -32,7 +41,7 @@ export function proxy(req: NextRequest) {
   }
 
   if (host.kind === "admin") {
-    return rewriteTo(req, `${ADMIN_PATH}${pathname}`);
+    return rewriteTo(req, `${ADMIN_PATH}${pathname}`, host);
   }
 
   if (host.kind === "shop") return rewriteToShop(req, host.slug);
@@ -52,6 +61,11 @@ export function proxy(req: NextRequest) {
   }
 
   if (host.kind === "unknown") return notFound();
+  if (req.headers.has(TENANT_HEADER)) {
+    const headers = new Headers(req.headers);
+    headers.delete(TENANT_HEADER);
+    return NextResponse.next({ request: { headers } });
+  }
   return NextResponse.next();
 }
 
@@ -66,11 +80,11 @@ function isUnder(pathname: string, base: string) {
 }
 
 function rewriteToShop(req: NextRequest, slug: string) {
-  return rewriteTo(req, `${SHOP_PATH}/${slug}${req.nextUrl.pathname}`);
+  return rewriteTo(req, `${SHOP_PATH}/${slug}${req.nextUrl.pathname}`, { kind: "shop", slug });
 }
 
 /** Internal rewrite (same origin as the app server, so Next never proxies it externally). */
-function rewriteTo(req: NextRequest, pathname: string) {
+function rewriteTo(req: NextRequest, pathname: string, tenant: HostKind) {
   const target = req.nextUrl.clone();
   target.pathname = pathname;
   // Behind Caddy, X-Forwarded-Proto makes nextUrl "https:", but the app server itself speaks plain
@@ -78,6 +92,7 @@ function rewriteTo(req: NextRequest, pathname: string) {
   if (!process.env.VERCEL) target.protocol = "http:";
   const headers = new Headers(req.headers);
   headers.set(REWRITE_HEADER, REWRITE_TOKEN);
+  headers.set(TENANT_HEADER, tenantHeaderValue(tenant)!);
   return NextResponse.rewrite(target, { request: { headers } });
 }
 

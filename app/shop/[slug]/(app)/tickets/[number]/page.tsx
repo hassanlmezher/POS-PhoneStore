@@ -247,14 +247,21 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-3 border-t pt-3">
-                <dt className="font-medium">{t("balance")}</dt>
+                {ticket.balanceUsdCents < 0 ? (
+                  <dt className="font-medium text-destructive">
+                    {t("refundDue")}
+                    <span className="block text-xs font-normal text-muted-foreground">{t("refundDueHint")}</span>
+                  </dt>
+                ) : (
+                  <dt className="font-medium">{t("balance")}</dt>
+                )}
                 <dd>
                   <Money
-                    usdCents={ticket.balanceUsdCents}
+                    usdCents={Math.abs(ticket.balanceUsdCents)}
                     rate={rate}
                     rounding={rounding}
                     className="items-end text-lg rtl:items-start"
-                    usdClassName={ticket.balanceUsdCents > 0 ? "text-warning" : undefined}
+                    usdClassName={ticket.balanceUsdCents > 0 ? "text-warning" : ticket.balanceUsdCents < 0 ? "text-destructive" : undefined}
                   />
                 </dd>
               </div>

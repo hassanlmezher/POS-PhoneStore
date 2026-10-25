@@ -805,6 +805,8 @@
     "fromEstimate": "From estimate",
     "paid": "Paid",
     "balance": "Balance",
+    "refundDue": "Refund to customer",
+    "refundDueHint": "Paid more than the final price",
     "recordPayment": "Record payment",
     "amount": "Amount",
     "currency": "Currency",

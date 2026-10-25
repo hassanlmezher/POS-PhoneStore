@@ -88,8 +88,9 @@ export async function closeDrawer(
   const totals = await drawerTotals(ctx.shop.id, session.id);
   if (!totals) return { ok: false, error: "noOpenDrawer" };
 
-  await ctx.db.cashSession.update({
-    where: { id: session.id },
+  // Only one of two simultaneous "Close" clicks closes the drawer; the other gets "no open drawer".
+  const closed = await ctx.db.cashSession.updateMany({
+    where: { id: session.id, closedAt: null },
     data: {
       closedAt: new Date(),
       closedById: ctx.user.id,
@@ -100,6 +101,7 @@ export async function closeDrawer(
       note: parsed.data.note || null,
     },
   });
+  if (closed.count === 0) return { ok: false, error: "noOpenDrawer" };
   refreshShop();
   return {
     ok: true,

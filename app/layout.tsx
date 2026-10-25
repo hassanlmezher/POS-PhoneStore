@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
 import { getPlatformSettings } from "@/lib/platform";
+import { clientMessages } from "@/i18n/client-messages";
 import { dirOf, type AppLocale } from "@/i18n/config";
 import "./globals.css";
 
@@ -29,7 +30,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${plexArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={await clientMessages("base")}>
           {children}
           <Toaster position={locale === "ar" ? "bottom-left" : "bottom-right"} />
         </NextIntlClientProvider>
