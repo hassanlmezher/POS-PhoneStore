@@ -201,7 +201,7 @@ export function ProductMock({ showcase }: { showcase: ShowcaseData }) {
   return (
     <div role="img" aria-label={t("label")} className="relative">
       <div aria-hidden className="absolute -inset-4 -z-10 rounded-[1.75rem] bg-primary-soft/70 sm:-inset-6" />
-      <div className={cn("grid gap-3 sm:gap-4", bottom === 2 && "sm:grid-cols-2")}>
+      <div className={cn("grid grid-cols-1 gap-3 sm:gap-4", bottom === 2 && "sm:grid-cols-2")}>
         {featured && <TicketCardMock card={featured} shop={shop} className={cn(bottom === 2 && "sm:col-span-2")} />}
         {ready.length > 0 && <KanbanColumnMock cards={ready} shop={shop} className={cn("hidden sm:flex", !featured && !sale && "flex")} />}
         {sale && <PosTotalMock sale={sale} shop={shop} />}

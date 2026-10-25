@@ -38,7 +38,7 @@ export function SiteFooter({ appName, demo, whatsapp, whatsappHref, email }: Pro
       )}
 
       <div className="border-t bg-card">
-        <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
+        <Container className="grid grid-cols-1 gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5 font-semibold">
               <BrandMark name={appName} />

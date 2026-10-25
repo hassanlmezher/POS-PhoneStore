@@ -72,7 +72,7 @@ export function ReceiptSettingsForm({ shop, rate, nextTicketNumber, latestTicket
     <form onSubmit={submit} noValidate className="flex flex-col gap-6">
       <fieldset disabled={readOnly} className="contents">
         <SectionCard title={t("repairsTitle")} description={t("repairsDescription")}>
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <Field
               label={t("prefix")}
               htmlFor="rc-prefix"
@@ -157,8 +157,9 @@ export function ReceiptSettingsForm({ shop, rate, nextTicketNumber, latestTicket
           </div>
         </SectionCard>
 
-        <div className="sticky bottom-24 z-10 flex justify-end md:bottom-4">
-          <Button type="submit" disabled={pending || readOnly} className="shadow-pop">
+        {/* Phones: a full-width bar above the bottom nav (same as the intake form); larger screens: a floating button. */}
+        <div className="sticky bottom-20 z-10 flex justify-end rounded-xl border bg-card/95 p-3 shadow-pop backdrop-blur md:bottom-4 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+          <Button type="submit" disabled={pending || readOnly} className="w-full md:w-auto md:shadow-pop">
             {pending ? tc("saving") : tc("save")}
           </Button>
         </div>
@@ -185,7 +186,7 @@ function Pair({ label, hint, en, ar }: { label: string; hint: string; en: Side; 
         {label}
         <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{hint}</span>
       </legend>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {(
           [
             [en, "en", "ltr", tc("english")],

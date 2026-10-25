@@ -186,7 +186,7 @@ export function CustomerPicker({ value, onChange, newCustomer, onNewCustomerChan
             <UserPlus className="size-4 text-primary" aria-hidden />
             {t("quickAddTitle")}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {!quickAddPhoneIsQuery || errors["newCustomer.phone"] ? (
               <Field label={t("phone")} htmlFor="intake-new-phone" error={errors["newCustomer.phone"]}>
                 <Input

@@ -37,7 +37,7 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{shop.name}</p>
             {shop.phone && (
-              <a href={e164 ? `tel:${e164}` : undefined} className="block truncate text-xs text-muted-foreground hover:text-foreground">
+              <a href={e164 ? `tel:${e164}` : undefined} className="-my-2 block truncate py-2 text-xs text-muted-foreground hover:text-foreground">
                 <bdi dir="ltr">{e164 ? formatPhone(e164, shop.countryCode) : shop.phone}</bdi>
               </a>
             )}
@@ -70,7 +70,7 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
               </p>
             )}
             {e164 && (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button asChild className="bg-success text-success-foreground hover:bg-success/90">
                   <a href={`https://wa.me/${waNumber(e164)}`} target="_blank" rel="noopener noreferrer">
                     <MessageCircle />

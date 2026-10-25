@@ -65,7 +65,7 @@ export function ItemsCard({ ticketId, items, totalUsdCents, canEdit, rate, round
                   {i.kind === "PART" ? <Package className="size-4" aria-hidden /> : <Wrench className="size-4" aria-hidden />}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{i.description}</p>
+                  <p className="line-clamp-2 text-sm font-medium break-words">{i.description}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     {t(i.kind === "PART" ? "part" : "labor")}
                     {i.qty > 1 && (

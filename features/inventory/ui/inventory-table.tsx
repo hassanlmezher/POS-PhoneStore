@@ -97,8 +97,8 @@ export function InventoryTable({ rows, showCost, rate, rounding }: Props) {
               </label>
             </TableHead>
             <TableHead>{t("name")}</TableHead>
-            <TableHead className="hidden lg:table-cell">{t("category")}</TableHead>
-            <TableHead>{t("type")}</TableHead>
+            <TableHead className="hidden xl:table-cell">{t("category")}</TableHead>
+            <TableHead className="hidden lg:table-cell">{t("type")}</TableHead>
             <TableHead className="text-end">{t("stock")}</TableHead>
             <TableHead className="text-end">{t("price")}</TableHead>
             {showCost && <TableHead className="hidden text-end xl:table-cell">{t("costMargin")}</TableHead>}
@@ -111,7 +111,7 @@ export function InventoryTable({ rows, showCost, rate, rounding }: Props) {
             return (
               <TableRow key={p.id} className={cn("relative", selected.has(p.id) && "bg-primary-soft/40", !p.active && "opacity-60")}>
                 <TableCell>{checkbox(p.id, p.name)}</TableCell>
-                <TableCell className="max-w-72">
+                <TableCell className="w-full max-w-0">
                   <Link href={`/inventory/${p.id}`} className="block truncate font-medium outline-none after:absolute after:inset-0 focus-visible:underline">
                     {p.name}
                   </Link>
@@ -122,8 +122,8 @@ export function InventoryTable({ rows, showCost, rate, rounding }: Props) {
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground lg:table-cell">{p.category ?? "—"}</TableCell>
-                <TableCell>
+                <TableCell className="hidden text-muted-foreground xl:table-cell">{p.category ?? "—"}</TableCell>
+                <TableCell className="hidden lg:table-cell">
                   <Badge variant={p.type === "PART" ? "soft" : "secondary"}>{tt(p.type)}</Badge>
                 </TableCell>
                 <TableCell className="text-end">

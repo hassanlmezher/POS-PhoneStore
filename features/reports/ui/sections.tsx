@@ -50,7 +50,7 @@ export async function OverviewSection({ ctx, range }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-label={t("summary")} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label={t("summary")} className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatTile icon={Wallet} label={t("totalTakings")}>
           {money(p.takings)}
         </StatTile>
@@ -99,14 +99,14 @@ export async function OverviewSection({ ctx, range }: Props) {
       {activeDays.length > 0 && (
         <SectionCard title={t("dailyBreakdown")} description={t("dailyBreakdownHint")} padded={false}>
           <div className="overflow-x-auto">
-            <Table className="min-w-[40rem]">
+            <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="ps-4 sm:ps-6">{t("date")}</TableHead>
-                  <TableHead className="text-end">{t("counterSales")}</TableHead>
-                  <TableHead className="text-end">{t("productRevenue")}</TableHead>
-                  <TableHead className="text-end">{t("productCost")}</TableHead>
-                  <TableHead className="text-end">{t("repairTakings")}</TableHead>
+                  <TableHead className="hidden md:table-cell text-end">{t("counterSales")}</TableHead>
+                  <TableHead className="hidden lg:table-cell text-end">{t("productRevenue")}</TableHead>
+                  <TableHead className="hidden xl:table-cell text-end">{t("productCost")}</TableHead>
+                  <TableHead className="hidden sm:table-cell text-end">{t("repairTakings")}</TableHead>
                   <TableHead className="pe-4 text-end sm:pe-6">{t("takings")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -114,19 +114,19 @@ export async function OverviewSection({ ctx, range }: Props) {
                 {activeDays.map((d) => (
                   <TableRow key={d.day}>
                     <TableCell className="ps-4 whitespace-nowrap sm:ps-6">{format.dateTime(startOfDay(d.day, range.tz), { weekday: "short", day: "numeric", month: "short" })}</TableCell>
-                    <TableCell className="text-end tabular-nums">{d.salesCount || <span className="text-subtle-foreground">—</span>}</TableCell>
-                    <TableCell className="text-end">{cellMoney(d.productRevenue)}</TableCell>
-                    <TableCell className="text-end">{cellMoney(d.productCost)}</TableCell>
-                    <TableCell className="text-end">{cellMoney(d.repairTakings)}</TableCell>
+                    <TableCell className="hidden text-end tabular-nums md:table-cell">{d.salesCount || <span className="text-subtle-foreground">—</span>}</TableCell>
+                    <TableCell className="hidden text-end lg:table-cell">{cellMoney(d.productRevenue)}</TableCell>
+                    <TableCell className="hidden text-end xl:table-cell">{cellMoney(d.productCost)}</TableCell>
+                    <TableCell className="hidden text-end sm:table-cell">{cellMoney(d.repairTakings)}</TableCell>
                     <TableCell className="pe-4 text-end sm:pe-6">{cellMoney(d.takings)}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="border-b-0 bg-muted/40 font-semibold hover:bg-muted/40">
                   <TableCell className="ps-4 sm:ps-6">{t("total")}</TableCell>
-                  <TableCell className="text-end tabular-nums">{sum("salesCount")}</TableCell>
-                  <TableCell className="text-end">{money(sum("productRevenue"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
-                  <TableCell className="text-end">{money(sum("productCost"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
-                  <TableCell className="text-end">{money(sum("repairTakings"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="hidden text-end tabular-nums md:table-cell">{sum("salesCount")}</TableCell>
+                  <TableCell className="hidden text-end lg:table-cell">{money(sum("productRevenue"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="hidden text-end xl:table-cell">{money(sum("productCost"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
+                  <TableCell className="hidden text-end sm:table-cell">{money(sum("repairTakings"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
                   <TableCell className="pe-4 text-end sm:pe-6">{money(sum("takings"), "items-end whitespace-nowrap rtl:items-start")}</TableCell>
                 </TableRow>
               </TableBody>
@@ -155,7 +155,7 @@ export async function RepairsSection({ ctx, range }: Props) {
   const total = (k: "repairs" | "chargeUsdCents" | "partsCostUsdCents" | "laborUsdCents" | "profitUsdCents") => techs.reduce((s, x) => s + x[k], 0);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <SectionCard title={t("repairsByStatus")} description={t("repairsByStatusHint", { count: received })}>
         {sorted.length === 0 ? (
           <EmptyState icon={Wrench} title={t("noRepairsTitle")} body={t("noRepairsBody")} className="py-6" />
@@ -182,14 +182,14 @@ export async function RepairsSection({ ctx, range }: Props) {
           <EmptyState icon={UserRound} title={t("noPickupsTitle")} body={t("noPickupsBody")} />
         ) : (
           <div className="overflow-x-auto">
-            <Table className="min-w-[40rem]">
+            <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="ps-4 sm:ps-6">{t("technician")}</TableHead>
-                  <TableHead className="text-end">{t("repairs")}</TableHead>
-                  <TableHead className="text-end">{t("charged")}</TableHead>
-                  <TableHead className="text-end">{t("partsCost")}</TableHead>
-                  <TableHead className="text-end">{t("labor")}</TableHead>
+                  <TableHead className="px-2 text-end sm:px-4">{t("repairs")}</TableHead>
+                  <TableHead className="hidden text-end sm:table-cell">{t("charged")}</TableHead>
+                  <TableHead className="hidden text-end 2xl:table-cell">{t("partsCost")}</TableHead>
+                  <TableHead className="hidden text-end 2xl:table-cell">{t("labor")}</TableHead>
                   <TableHead className="pe-4 text-end sm:pe-6">{t("profit")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -197,20 +197,20 @@ export async function RepairsSection({ ctx, range }: Props) {
                 {techs.map((r) => (
                   <TableRow key={r.techId ?? "none"}>
                     <TableCell className={cn("ps-4 font-medium sm:ps-6", !r.name && "text-muted-foreground italic")}>{r.name ?? t("unassigned")}</TableCell>
-                    <TableCell className="text-end tabular-nums">{r.repairs}</TableCell>
-                    <TableCell className="text-end">{money(r.chargeUsdCents)}</TableCell>
-                    <TableCell className="text-end">{money(r.partsCostUsdCents)}</TableCell>
-                    <TableCell className="text-end">{money(r.laborUsdCents)}</TableCell>
+                    <TableCell className="px-2 text-end tabular-nums sm:px-4">{r.repairs}</TableCell>
+                    <TableCell className="hidden text-end sm:table-cell">{money(r.chargeUsdCents)}</TableCell>
+                    <TableCell className="hidden text-end 2xl:table-cell">{money(r.partsCostUsdCents)}</TableCell>
+                    <TableCell className="hidden text-end 2xl:table-cell">{money(r.laborUsdCents)}</TableCell>
                     <TableCell className="pe-4 text-end sm:pe-6">{money(r.profitUsdCents)}</TableCell>
                   </TableRow>
                 ))}
                 {techs.length > 1 && (
                   <TableRow className="border-b-0 bg-muted/40 font-semibold hover:bg-muted/40">
                     <TableCell className="ps-4 sm:ps-6">{t("total")}</TableCell>
-                    <TableCell className="text-end tabular-nums">{total("repairs")}</TableCell>
-                    <TableCell className="text-end">{money(total("chargeUsdCents"))}</TableCell>
-                    <TableCell className="text-end">{money(total("partsCostUsdCents"))}</TableCell>
-                    <TableCell className="text-end">{money(total("laborUsdCents"))}</TableCell>
+                    <TableCell className="px-2 text-end tabular-nums sm:px-4">{total("repairs")}</TableCell>
+                    <TableCell className="hidden text-end sm:table-cell">{money(total("chargeUsdCents"))}</TableCell>
+                    <TableCell className="hidden text-end 2xl:table-cell">{money(total("partsCostUsdCents"))}</TableCell>
+                    <TableCell className="hidden text-end 2xl:table-cell">{money(total("laborUsdCents"))}</TableCell>
                     <TableCell className="pe-4 text-end sm:pe-6">{money(total("profitUsdCents"))}</TableCell>
                   </TableRow>
                 )}
@@ -235,13 +235,13 @@ export async function ProductsSection({ ctx, range }: Props) {
         <EmptyState icon={Package} title={t("noProductsTitle")} body={t("noProductsBody")} />
       ) : (
         <div className="overflow-x-auto">
-          <Table className="min-w-[36rem]">
+          <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-10 ps-4 sm:ps-6">#</TableHead>
-                <TableHead>{t("product")}</TableHead>
-                <TableHead className="text-end">{t("qty")}</TableHead>
-                <TableHead className="text-end">{t("revenue")}</TableHead>
+                <TableHead className="hidden w-10 ps-4 sm:table-cell sm:ps-6">#</TableHead>
+                <TableHead className="ps-4 sm:ps-4">{t("product")}</TableHead>
+                <TableHead className="px-2 text-end sm:px-4">{t("qty")}</TableHead>
+                <TableHead className="hidden text-end sm:table-cell">{t("revenue")}</TableHead>
                 <TableHead className="pe-4 text-end sm:pe-6">{t("profit")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -250,15 +250,15 @@ export async function ProductsSection({ ctx, range }: Props) {
                 const m = pct(r.profitUsdCents, r.revenueUsdCents);
                 return (
                   <TableRow key={r.productId} className="relative">
-                    <TableCell className="ps-4 text-muted-foreground tabular-nums sm:ps-6">{i + 1}</TableCell>
-                    <TableCell className="max-w-72">
+                    <TableCell className="hidden ps-4 text-muted-foreground tabular-nums sm:table-cell sm:ps-6">{i + 1}</TableCell>
+                    <TableCell className="w-full max-w-0 ps-4 sm:max-w-72 sm:ps-4">
                       <Link href={`/inventory/${r.productId}`} className="block truncate font-medium outline-none after:absolute after:inset-0 hover:underline focus-visible:underline">
                         {r.name}
                       </Link>
                       {r.sku && <Ltr className="text-xs text-muted-foreground">{r.sku}</Ltr>}
                     </TableCell>
-                    <TableCell className="text-end font-medium tabular-nums">{r.qty}</TableCell>
-                    <TableCell className="text-end">{money(r.revenueUsdCents)}</TableCell>
+                    <TableCell className="px-2 text-end font-medium tabular-nums sm:px-4">{r.qty}</TableCell>
+                    <TableCell className="hidden text-end sm:table-cell">{money(r.revenueUsdCents)}</TableCell>
                     <TableCell className="pe-4 text-end sm:pe-6">
                       {money(r.profitUsdCents)}
                       {m !== null && <p className="text-xs text-muted-foreground">{t("margin", { pct: format.number(m, { maximumFractionDigits: 1 }) })}</p>}
@@ -291,7 +291,7 @@ export async function BalancesSection({ ctx, page = 1, params }: { ctx: ShopCont
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-label={t("summary")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section aria-label={t("summary")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatTile icon={HandCoins} label={t("owedNow")} tone={data.totalOwedUsdCents > 0 ? "warning" : "default"}>
           {money(data.totalOwedUsdCents)}
         </StatTile>

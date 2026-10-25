@@ -11,7 +11,7 @@ export default function Loading() {
         </div>
         <Skeleton className="h-11 w-32" />
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-6">
           <Skeleton className="h-56 rounded-xl" />
           <Skeleton className="h-80 rounded-xl" />

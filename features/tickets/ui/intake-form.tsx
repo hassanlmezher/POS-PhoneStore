@@ -196,7 +196,7 @@ export function IntakeForm(props: IntakeFormProps) {
         // Ctrl/Cmd+Enter submits even from a textarea.
         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
       }}
-      className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-6"
+      className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-6"
     >
       <div className="flex min-w-0 flex-col gap-4 xl:gap-6">
         <Section title={t("customer")}>
@@ -212,7 +212,7 @@ export function IntakeForm(props: IntakeFormProps) {
 
         <Section title={t("deviceSection")}>
           <DevicePicker autoFocus={!!props.initialCustomer} catalog={props.catalog} value={device} onChange={setDevice} error={errors.deviceModelId ?? errors.modelText} />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("imei")} htmlFor="intake-imei" optional error={errors.imei}>
               <Input
                 {...fieldAria("intake-imei", errors.imei)}
@@ -340,7 +340,7 @@ export function IntakeForm(props: IntakeFormProps) {
         </Section>
       </div>
 
-      <aside className="grid min-w-0 gap-4 md:grid-cols-2 md:items-start xl:sticky xl:top-24 xl:flex xl:flex-col xl:self-start xl:gap-6">
+      <aside className="grid grid-cols-1 min-w-0 gap-4 md:grid-cols-2 md:items-start xl:sticky xl:top-24 xl:flex xl:flex-col xl:self-start xl:gap-6">
         <Section title={t("moneySection")}>
           <Field label={t("estimate")} htmlFor="intake-estimate" optional error={errors.estimate}>
             <MoneyInput

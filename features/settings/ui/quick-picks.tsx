@@ -22,7 +22,7 @@ const ICONS: Record<Kind, LucideIcon> = { PROBLEM: Wrench, PAY_IN: HandCoins, PA
 /** Settings → Quick picks: problem chips on intake and pay in/out reasons on the cash drawer. */
 export function QuickPicks({ lists, readOnly }: { lists: Record<Kind, QuickPick[]>; readOnly: boolean }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       {(["PROBLEM", "PAY_IN", "PAY_OUT"] as const).map((kind) => (
         <PickList key={kind} kind={kind} items={lists[kind]} readOnly={readOnly} />
       ))}
@@ -211,7 +211,7 @@ function PickForm({ kind, item, onDone, keepOpen }: { kind: Kind; item?: QuickPi
 
   return (
     <form onSubmit={submit} onKeyDown={(e) => e.key === "Escape" && onDone()} noValidate className="flex flex-col gap-2">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label htmlFor={`${prefix}-en`} className="text-xs font-medium text-muted-foreground">
             {t("labelEn")}

@@ -64,7 +64,7 @@ function Row({
   flip?: boolean;
 }) {
   return (
-    <article aria-labelledby={id} className={cn("grid items-center gap-10 lg:gap-16", visual && "lg:grid-cols-2")}>
+    <article aria-labelledby={id} className={cn("grid grid-cols-1 items-center gap-10 lg:gap-16", visual && "lg:grid-cols-2")}>
       <div className={cn("max-w-xl", flip && "lg:order-2")}>
         <TimeChip time={time} />
         <h3 id={id} className="mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
@@ -232,7 +232,7 @@ export function DayFeatures({ showcase }: { showcase: Showcase | null }) {
             }
           />
         </div>
-        <ul className="mt-20 grid gap-4 sm:mt-28 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-20 grid grid-cols-1 gap-4 sm:mt-28 sm:grid-cols-2 lg:grid-cols-3">
           {GRID.map(({ key, icon }) => (
             <GridCard
               key={key}

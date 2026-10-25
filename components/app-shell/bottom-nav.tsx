@@ -28,12 +28,12 @@ export function BottomNav({ items, canCreateTicket }: BottomNavProps) {
         href={href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+          "flex min-h-14 min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
           active ? "text-primary" : "text-muted-foreground",
         )}
       >
         <Icon className="size-5" aria-hidden />
-        <span className="max-w-full truncate px-1">{t(`nav.${key}`)}</span>
+        <span className="max-w-full truncate px-1">{key === "pos" ? t("nav.posShort") : t(`nav.${key}`)}</span>
       </Link>
     );
   };
@@ -46,7 +46,7 @@ export function BottomNav({ items, canCreateTicket }: BottomNavProps) {
       <div className="flex items-stretch gap-1 px-2 py-1">
         {picks.slice(0, half).map(renderItem)}
         {canCreateTicket && (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex min-w-0 flex-1 basis-0 items-center justify-center">
             <Link
               href="/tickets/new"
               aria-label={t("common.newTicket")}

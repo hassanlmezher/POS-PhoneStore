@@ -29,7 +29,7 @@ export function Money({ usdCents, rate, rounding, layout = "stacked", className,
       )}
     >
       <span className={cn("font-semibold text-foreground", usdClassName)}>{usd}</span>
-      <span className={cn("text-[0.8em] font-normal text-muted-foreground", lbpClassName)}>{lbp}</span>
+      <span className={cn("text-[max(0.8em,11px)] font-normal text-muted-foreground", lbpClassName)}>{lbp}</span>
     </span>
   );
 }

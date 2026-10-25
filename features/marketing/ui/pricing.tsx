@@ -40,7 +40,7 @@ export async function Pricing({ plans, demo }: { plans: PublicPlan[]; demo: stri
         ) : (
           <ul
             className={cn(
-              "mx-auto mt-12 grid gap-4 sm:gap-6",
+              "mx-auto mt-12 grid grid-cols-1 gap-4 sm:gap-6",
               plans.length === 1 && "max-w-md",
               plans.length === 2 && "max-w-3xl sm:grid-cols-2",
               plans.length >= 3 && "md:grid-cols-2 lg:grid-cols-3",

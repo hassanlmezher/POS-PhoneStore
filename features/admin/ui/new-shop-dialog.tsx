@@ -206,7 +206,7 @@ function NewShopDialog({ rootDomain, protocol, plans, onClose }: Props & { onClo
                   }}
                 />
               </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t("plan")} htmlFor="ns-plan" error={errors.planId}>
                   <NativeSelect {...fieldAria("ns-plan", errors.planId)} value={v.planId} onChange={(e) => set("planId", e.target.value)}>
                     <option value="">{t("noPlan")}</option>
@@ -247,7 +247,7 @@ function NewShopDialog({ rootDomain, protocol, plans, onClose }: Props & { onClo
 
               <Separator className="my-1" />
               <p className="text-sm font-semibold">{t("ownerSection")}</p>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t("ownerName")} htmlFor="ns-owner" error={errors.ownerName}>
                   <Input {...fieldAria("ns-owner", errors.ownerName)} autoComplete="off" value={v.ownerName} onChange={(e) => set("ownerName", e.target.value)} />
                 </Field>

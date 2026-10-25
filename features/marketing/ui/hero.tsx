@@ -12,7 +12,7 @@ export function Hero({ demo, showcase }: { demo: string | null; showcase: Showca
   const preview = hasProductMock(showcase) ? showcase : null;
   return (
     <section aria-labelledby="hero-title" className="overflow-hidden">
-      <Container className={cn("grid items-center gap-14 py-14 sm:py-20 lg:gap-16 lg:py-24", preview && "lg:grid-cols-[1fr_1.05fr]")}>
+      <Container className={cn("grid grid-cols-1 items-center gap-14 py-14 sm:py-20 lg:gap-16 lg:py-24", preview && "lg:grid-cols-[1fr_1.05fr]")}>
         <div className="max-w-xl">
           <p className="inline-flex h-8 items-center rounded-full border bg-card px-3 text-sm font-medium text-muted-foreground shadow-card">
             {t("eyebrow")}

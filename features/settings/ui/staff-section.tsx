@@ -64,7 +64,7 @@ export function StaffSection({ staff, currentUserId, maxStaff, readOnly }: Props
           <TableHeader>
             <TableRow>
               <TableHead>{t("name")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("email")}</TableHead>
+              <TableHead className="hidden xl:table-cell">{t("email")}</TableHead>
               <TableHead className="hidden sm:table-cell">{t("role")}</TableHead>
               {/* Role is shown under the name on phones. */}
               <TableHead>{t("status")}</TableHead>
@@ -114,32 +114,32 @@ function StaffRow({ user, isMe, readOnly, onEdit, onPassword }: { user: Staff; i
 
   return (
     <TableRow className={cn(!user.active && "text-muted-foreground")}>
-      <TableCell>
+      <TableCell className="w-full max-w-0 ps-3 pe-2 sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
-          <Avatar className="size-9">
+          <Avatar className="hidden size-9 sm:flex">
             <AvatarFallback>{initials(user.name)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="max-w-40 truncate font-medium text-foreground sm:max-w-56">
+            <p className="truncate font-medium text-foreground">
               {user.name}
               {isMe && <span className="ms-1.5 text-xs font-normal text-muted-foreground">{t("you")}</span>}
             </p>
-            <p className="max-w-40 truncate text-xs text-muted-foreground md:hidden">
+            <p className="truncate text-xs text-muted-foreground xl:hidden">
               <bdi dir="ltr">{user.email}</bdi>
               <span className="sm:hidden"> · {tr(user.role)}</span>
             </p>
           </div>
         </div>
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        <bdi dir="ltr" className="block max-w-64 truncate">
+      <TableCell className="hidden xl:table-cell">
+        <bdi dir="ltr" className="block max-w-56 truncate">
           {user.email}
         </bdi>
       </TableCell>
       <TableCell className="hidden sm:table-cell">
         <Badge variant={user.role === "OWNER" ? "soft" : "secondary"}>{tr(user.role)}</Badge>
       </TableCell>
-      <TableCell>
+      <TableCell className="px-2 sm:px-4">
         <div className="flex items-center gap-3">
           {user.active ? (
             <ConfirmDialog
@@ -152,11 +152,11 @@ function StaffRow({ user, isMe, readOnly, onEdit, onPassword }: { user: Staff; i
           ) : (
             <Switch checked={false} disabled={readOnly || pending} onCheckedChange={() => setActive(true)} aria-label={t("activeLabel", { name: user.name })} />
           )}
-          <span className="hidden text-sm sm:inline">{user.active ? t("active") : t("inactive")}</span>
+          <span className="hidden text-sm xl:inline">{user.active ? t("active") : t("inactive")}</span>
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex justify-end gap-1">
+      <TableCell className="ps-0 pe-2 sm:px-4">
+        <div className="flex justify-end sm:gap-1">
           <Button variant="ghost" size="icon" onClick={onEdit} disabled={readOnly} aria-label={t("editLabel", { name: user.name })}>
             <Pencil />
           </Button>

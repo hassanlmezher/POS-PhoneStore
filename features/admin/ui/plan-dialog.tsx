@@ -81,7 +81,7 @@ function PlanDialog({ plan, onClose }: { plan?: Plan; onClose: () => void }) {
           <Field label={t("name")} htmlFor="pl-name" error={errors.name}>
             <Input {...fieldAria("pl-name", errors.name)} autoFocus value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("price")} htmlFor="pl-price" error={errors.price}>
               <div className="relative">
                 <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground" dir="ltr">

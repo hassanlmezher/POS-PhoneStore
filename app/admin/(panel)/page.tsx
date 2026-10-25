@@ -76,7 +76,7 @@ export default async function AdminHomePage({ searchParams }: PageProps<"/admin"
             <TableHeader>
               <TableRow>
                 <TableHead>{t("cols.shop")}</TableHead>
-                <TableHead>{t("cols.plan")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("cols.plan")}</TableHead>
                 <TableHead>{t("cols.status")}</TableHead>
                 <TableHead className="hidden lg:table-cell">{t("cols.until")}</TableHead>
                 <TableHead className="hidden text-end md:table-cell">{t("cols.staff")}</TableHead>
@@ -91,8 +91,8 @@ export default async function AdminHomePage({ searchParams }: PageProps<"/admin"
             <TableBody>
               {shops.map((s) => (
                 <TableRow key={s.id} className="relative">
-                  <TableCell>
-                    <Link href={`/tenants/${s.id}`} className="block max-w-56 truncate font-medium after:absolute after:inset-0 hover:underline">
+                  <TableCell className="w-full max-w-0 sm:w-auto sm:max-w-none">
+                    <Link href={`/tenants/${s.id}`} className="block truncate font-medium sm:max-w-56 after:absolute after:inset-0 hover:underline">
                       {s.name}
                     </Link>
                     <a
@@ -106,7 +106,7 @@ export default async function AdminHomePage({ searchParams }: PageProps<"/admin"
                       <span className="sr-only">{t("openShop")}</span>
                     </a>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{s.plan?.name ?? "—"}</TableCell>
+                  <TableCell className="hidden text-muted-foreground sm:table-cell">{s.plan?.name ?? "—"}</TableCell>
                   <TableCell>
                     <SubStatusBadge status={s.effectiveStatus} />
                   </TableCell>
@@ -117,7 +117,7 @@ export default async function AdminHomePage({ searchParams }: PageProps<"/admin"
                   <TableCell className="hidden text-end md:table-cell">{num(s._count.tickets)}</TableCell>
                   <TableCell className="hidden text-end md:table-cell">{num(s._count.sales)}</TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground xl:table-cell">{date(s.createdAt)}</TableCell>
-                  <TableCell>
+                  <TableCell className="ps-0 sm:ps-4">
                     <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" aria-hidden />
                   </TableCell>
                 </TableRow>

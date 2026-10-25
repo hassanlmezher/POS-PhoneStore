@@ -147,7 +147,7 @@ export default async function DashboardPage({ params }: PageProps<"/shop/[slug]"
             ).map(([cur, v]) => (
               <div key={cur} className="rounded-lg bg-muted/60 p-3">
                 <dt className="text-xs text-muted-foreground">{t("expectedIn", { currency: cur })}</dt>
-                <dd className="mt-0.5 text-lg font-semibold tabular-nums">
+                <dd className="mt-0.5 text-base font-semibold whitespace-nowrap tabular-nums sm:text-lg">
                   <bdi dir="ltr">{formatMoney(v, cur)}</bdi>
                 </dd>
               </div>
@@ -282,7 +282,7 @@ export default async function DashboardPage({ params }: PageProps<"/shop/[slug]"
         )}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="flex min-w-0 flex-col gap-6">
           {myRepairs}
           {readyCard}

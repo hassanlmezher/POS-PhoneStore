@@ -131,7 +131,7 @@ export function ShopProfileForm({ shop, readOnly }: Props) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <SectionCard title={t("shop.title")} description={t("shop.description")}>
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <fieldset disabled={readOnly} className="contents">
@@ -166,7 +166,7 @@ export function ShopProfileForm({ shop, readOnly }: Props) {
                 className="w-full sm:w-64"
               />
             </Field>
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field label={t("shop.timezone")} htmlFor="shop-timezone" hint={t("shop.timezoneHint")} error={errors.timezone}>
                 <SearchSelect
                   id="shop-timezone"

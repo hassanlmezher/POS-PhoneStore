@@ -40,7 +40,7 @@ export function OpenDrawerForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={t("openingUsd")} htmlFor="open-usd" error={errors.openingUsd}>
           <MoneyInput {...fieldAria("open-usd", errors.openingUsd)} autoFocus currency="USD" value={usd} onValueChange={setUsd} placeholder="0.00" />
         </Field>

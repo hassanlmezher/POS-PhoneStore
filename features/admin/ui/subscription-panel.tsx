@@ -131,7 +131,7 @@ export function SubscriptionPanel({ shopId, sub, plans, payments }: Props) {
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("plan")} htmlFor="sub-plan" error={subErrors.planId}>
               <NativeSelect {...fieldAria("sub-plan", subErrors.planId)} value={s.planId} onChange={(e) => setS({ ...s, planId: e.target.value })}>
                 <option value="">{t("noPlan")}</option>
@@ -180,7 +180,7 @@ export function SubscriptionPanel({ shopId, sub, plans, payments }: Props) {
 
       <SectionCard title={t("paymentTitle")} description={t("paymentDescription")}>
         <form onSubmit={recordPayment} noValidate className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("amount")} htmlFor="pay-amount" error={payErrors.amount}>
               <div className="relative">
                 <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground" dir="ltr">
@@ -234,25 +234,32 @@ export function SubscriptionPanel({ shopId, sub, plans, payments }: Props) {
               <TableRow>
                 <TableHead>{t("recordedAt")}</TableHead>
                 <TableHead className="text-end">{t("amount")}</TableHead>
-                <TableHead>{t("method")}</TableHead>
-                <TableHead>{t("period")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("note")}</TableHead>
+                <TableHead className="hidden 2xl:table-cell">{t("method")}</TableHead>
+                <TableHead className="hidden xl:table-cell">{t("period")}</TableHead>
+                <TableHead className="hidden 2xl:table-cell">{t("note")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.map((x) => (
                 <TableRow key={x.id}>
-                  <TableCell className="whitespace-nowrap">{date(x.createdAt)}</TableCell>
+                  <TableCell className="py-2.5 whitespace-nowrap">
+                    {date(x.createdAt)}
+                    {/* Narrow screens: method and period under the date (their columns are hidden). */}
+                    <span className="block text-xs text-muted-foreground xl:hidden">
+                      {date(x.periodStart)} – {date(x.periodEnd)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground 2xl:hidden">{x.method}</span>
+                  </TableCell>
                   <TableCell className="text-end font-medium">
                     <bdi dir="ltr" className="tabular-nums">
                       {formatMoney(x.amountUsdCents, "USD")}
                     </bdi>
                   </TableCell>
-                  <TableCell>{x.method}</TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                  <TableCell className="hidden 2xl:table-cell">{x.method}</TableCell>
+                  <TableCell className="hidden whitespace-nowrap text-muted-foreground xl:table-cell">
                     {date(x.periodStart)} – {date(x.periodEnd)}
                   </TableCell>
-                  <TableCell className="hidden max-w-56 truncate text-muted-foreground md:table-cell">{x.note ?? "—"}</TableCell>
+                  <TableCell className="hidden max-w-56 truncate text-muted-foreground 2xl:table-cell">{x.note ?? "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

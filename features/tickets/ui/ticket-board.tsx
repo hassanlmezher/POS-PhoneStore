@@ -235,8 +235,8 @@ function BoardCardView({
             </Link>
             {card.status !== "PICKED_UP" && isClosed(card.status) && <StatusBadge status={card.status} className="h-5 px-2" />}
           </div>
-          <p className="mt-1 truncate text-sm font-medium">{card.device}</p>
-          <p className="truncate text-xs text-muted-foreground">{card.customerName}</p>
+          <p dir="auto" className="mt-1 truncate text-sm font-medium rtl:text-right">{card.device}</p>
+          <p dir="auto" className="truncate text-xs text-muted-foreground rtl:text-right">{card.customerName}</p>
         </div>
         {canMove && (
           <DropdownMenu>
@@ -275,7 +275,7 @@ function BoardCardView({
         )}
         {card.techName && (
           <Avatar className="ms-auto size-6" title={card.techName}>
-            <AvatarFallback className="text-[10px]">{initials(card.techName)}</AvatarFallback>
+            <AvatarFallback className="text-[11px]">{initials(card.techName)}</AvatarFallback>
           </Avatar>
         )}
       </div>

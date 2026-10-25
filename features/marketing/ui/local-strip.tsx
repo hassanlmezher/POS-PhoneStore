@@ -20,7 +20,7 @@ export function LocalStrip() {
             {t("title")}
           </h2>
         </div>
-        <ul className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {ITEMS.map(({ key, icon: Icon }) => (
             <li key={key} className="border-s-2 border-primary/20 ps-5">
               <Icon aria-hidden className="size-6 text-primary" />

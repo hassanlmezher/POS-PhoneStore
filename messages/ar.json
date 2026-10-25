@@ -51,6 +51,7 @@
     "dashboard": "لوحة التحكم",
     "tickets": "التصليحات",
     "pos": "نقطة البيع",
+    "posShort": "البيع",
     "customers": "الزبائن",
     "inventory": "المخزون",
     "cash": "الصندوق",

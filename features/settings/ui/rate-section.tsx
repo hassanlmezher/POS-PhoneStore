@@ -22,7 +22,7 @@ export function RateSection({ rate, history, readOnly }: Props) {
   const format = useFormatter();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
       <SectionCard title={t("currentTitle")} description={t("currentDescription")}>
         <div className="flex flex-col gap-6">
           <p className="flex flex-wrap items-baseline gap-x-2" dir="ltr">

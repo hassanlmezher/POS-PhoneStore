@@ -47,7 +47,7 @@ export function PlatformSettingsForm({ settings, shops }: { settings: Settings; 
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-2 lg:items-start">
+    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
       <SectionCard title={t("brandTitle")} description={t("brandDescription")}>
         <div className="flex flex-col gap-5">
           <Field label={t("appName")} htmlFor="pf-app-name" hint={t("appNameHint")} error={errors.appName}>

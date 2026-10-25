@@ -47,7 +47,7 @@ export function TicketList({
               <Link href={`/tickets/${tk.number}`} className="shrink-0 font-semibold whitespace-nowrap outline-none after:absolute after:inset-0 focus-visible:underline">
                 <Ltr>{formatTicketNumber(prefix, tk.number)}</Ltr>
               </Link>
-              <span className="truncate font-medium">{tk.device || "—"}</span>
+              <span dir="auto" className="truncate font-medium rtl:text-right">{tk.device || "—"}</span>
               {showStatus && <StatusBadge status={tk.status} className="hidden sm:inline-flex" />}
             </p>
             <p className="truncate text-sm text-muted-foreground">

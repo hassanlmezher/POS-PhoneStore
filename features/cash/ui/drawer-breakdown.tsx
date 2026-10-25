@@ -21,7 +21,8 @@ export function DrawerBreakdown({ totals, counted }: { totals: DrawerTotals; cou
   const expectedLbp = counted?.expectedLbp ?? totals.expectedLbp;
   const cell = (v: number, sign: 0 | 1 | -1, currency: "USD" | "LBP") => (
     <bdi dir="ltr" className={cn("whitespace-nowrap tabular-nums", v === 0 && "text-subtle-foreground")}>
-      {sign === 0 || v === 0 ? formatMoney(v, currency) : signedMoney(sign * v, currency)}
+      {/* The column header names the currency, so LBP amounts drop the suffix (keeps the table phone-width). */}
+      {(sign === 0 || v === 0 ? formatMoney(v, currency) : signedMoney(sign * v, currency)).replace(/\s*LBP$/, "")}
     </bdi>
   );
 
@@ -29,39 +30,39 @@ export function DrawerBreakdown({ totals, counted }: { totals: DrawerTotals; cou
     <Table>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className="ps-4 sm:ps-6">
+          <TableHead className="ps-4 pe-2 sm:ps-6 sm:pe-4">
             <span className="sr-only">{t("item")}</span>
           </TableHead>
-          <TableHead className="text-end">USD</TableHead>
-          <TableHead className="pe-4 text-end sm:pe-6">LBP</TableHead>
+          <TableHead className="px-2 text-end sm:px-4">USD</TableHead>
+          <TableHead className="ps-2 pe-4 text-end sm:ps-4 sm:pe-6">LBP</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((r) => (
           <TableRow key={r.label} className="hover:bg-transparent">
-            <TableCell className="h-12 ps-4 text-muted-foreground sm:ps-6">{r.label}</TableCell>
-            <TableCell className="h-12 text-end">{cell(r.usd, r.sign, "USD")}</TableCell>
-            <TableCell className="h-12 pe-4 text-end sm:pe-6">{cell(r.lbp, r.sign, "LBP")}</TableCell>
+            <TableCell className="h-12 ps-4 pe-2 text-muted-foreground sm:ps-6 sm:pe-4">{r.label}</TableCell>
+            <TableCell className="h-12 px-2 text-end sm:px-4">{cell(r.usd, r.sign, "USD")}</TableCell>
+            <TableCell className="h-12 ps-2 pe-4 text-end sm:ps-4 sm:pe-6">{cell(r.lbp, r.sign, "LBP")}</TableCell>
           </TableRow>
         ))}
         <TableRow className="bg-muted/40 font-semibold hover:bg-muted/40">
-          <TableCell className="ps-4 sm:ps-6">{t("expected")}</TableCell>
-          <TableCell className="text-end">{cell(expectedUsd, 0, "USD")}</TableCell>
-          <TableCell className="pe-4 text-end sm:pe-6">{cell(expectedLbp, 0, "LBP")}</TableCell>
+          <TableCell className="ps-4 pe-2 sm:ps-6 sm:pe-4">{t("expected")}</TableCell>
+          <TableCell className="px-2 text-end sm:px-4">{cell(expectedUsd, 0, "USD")}</TableCell>
+          <TableCell className="ps-2 pe-4 text-end sm:ps-4 sm:pe-6">{cell(expectedLbp, 0, "LBP")}</TableCell>
         </TableRow>
         {counted && (
           <>
             <TableRow className="hover:bg-transparent">
-              <TableCell className="ps-4 sm:ps-6">{t("counted")}</TableCell>
-              <TableCell className="text-end">{cell(counted.countedUsdCents, 0, "USD")}</TableCell>
-              <TableCell className="pe-4 text-end sm:pe-6">{cell(counted.countedLbp, 0, "LBP")}</TableCell>
+              <TableCell className="ps-4 pe-2 sm:ps-6 sm:pe-4">{t("counted")}</TableCell>
+              <TableCell className="px-2 text-end sm:px-4">{cell(counted.countedUsdCents, 0, "USD")}</TableCell>
+              <TableCell className="ps-2 pe-4 text-end sm:ps-4 sm:pe-6">{cell(counted.countedLbp, 0, "LBP")}</TableCell>
             </TableRow>
             <TableRow className="border-b-0 hover:bg-transparent">
-              <TableCell className="ps-4 sm:ps-6">{t("difference")}</TableCell>
-              <TableCell className="text-end">
+              <TableCell className="ps-4 pe-2 sm:ps-6 sm:pe-4">{t("difference")}</TableCell>
+              <TableCell className="px-2 text-end sm:px-4">
                 <CashDiff diff={counted.countedUsdCents - counted.expectedUsdCents} currency="USD" />
               </TableCell>
-              <TableCell className="pe-4 text-end sm:pe-6">
+              <TableCell className="ps-2 pe-4 text-end sm:ps-4 sm:pe-6">
                 <CashDiff diff={counted.countedLbp - counted.expectedLbp} currency="LBP" />
               </TableCell>
             </TableRow>

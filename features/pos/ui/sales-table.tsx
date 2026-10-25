@@ -31,30 +31,30 @@ export function SalesTable({ rows, rate, rounding }: { rows: SaleRow[]; rate: nu
     <Table>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className="md:w-20">#</TableHead>
-          <TableHead className="hidden md:table-cell">{t("date")}</TableHead>
-          <TableHead className="hidden md:table-cell">{t("customer")}</TableHead>
+          <TableHead className="lg:w-20">#</TableHead>
+          <TableHead className="hidden lg:table-cell">{t("date")}</TableHead>
+          <TableHead className="hidden lg:table-cell">{t("customer")}</TableHead>
           <TableHead className="hidden text-end xl:table-cell">{t("items")}</TableHead>
           <TableHead className="text-end">{t("total")}</TableHead>
           <TableHead className="hidden xl:table-cell">{t("payment")}</TableHead>
-          <TableHead className="hidden text-end md:table-cell">{t("balance")}</TableHead>
+          <TableHead className="hidden text-end lg:table-cell">{t("balance")}</TableHead>
           <TableHead className="hidden 2xl:table-cell">{t("cashier")}</TableHead>
-          <TableHead className="hidden w-10 px-2 md:table-cell" />
+          <TableHead className="hidden w-10 px-2 lg:table-cell" />
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((s) => (
           <TableRow key={s.id} className={cn("relative", s.voided && "text-muted-foreground")}>
-            {/* On phones this cell also shows the customer and date (their columns are hidden). */}
-            <TableCell className="w-full max-w-0 py-2.5 font-semibold md:w-auto md:max-w-none">
+            {/* On phones and tablets this cell also shows the customer and date (their columns are hidden). */}
+            <TableCell className="w-full max-w-0 py-2.5 font-semibold lg:w-auto lg:max-w-none">
               <Link href={`/sales/${s.number}`} className="outline-none after:absolute after:inset-0 focus-visible:underline">
                 <Ltr>#{s.number}</Ltr>
               </Link>
-              <span className="block truncate font-normal md:hidden">{s.customer ?? <span className="text-subtle-foreground">{t("walkIn")}</span>}</span>
-              <span className="block truncate text-xs font-normal text-muted-foreground md:hidden">{s.date}</span>
+              <span className="block truncate font-normal lg:hidden">{s.customer ?? <span className="text-subtle-foreground">{t("walkIn")}</span>}</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground lg:hidden">{s.date}</span>
             </TableCell>
-            <TableCell className="hidden whitespace-nowrap text-muted-foreground md:table-cell">{s.date}</TableCell>
-            <TableCell className="hidden max-w-48 truncate md:table-cell">
+            <TableCell className="hidden whitespace-nowrap text-muted-foreground lg:table-cell">{s.date}</TableCell>
+            <TableCell className="hidden max-w-48 truncate lg:table-cell">
               {s.customer ?? <span className="text-subtle-foreground">{t("walkIn")}</span>}
             </TableCell>
             <TableCell className="hidden text-end tabular-nums xl:table-cell">{s.items}</TableCell>
@@ -62,17 +62,17 @@ export function SalesTable({ rows, rate, rounding }: { rows: SaleRow[]; rate: nu
               {s.voided ? (
                 <span className="inline-flex flex-wrap items-center justify-end gap-2">
                   <Badge variant="destructive">{t("voided")}</Badge>
-                  <Ltr className="hidden line-through md:inline">{formatMoney(s.totalUsdCents, "USD")}</Ltr>
+                  <Ltr className="hidden line-through lg:inline">{formatMoney(s.totalUsdCents, "USD")}</Ltr>
                 </span>
               ) : (
                 <Money usdCents={s.totalUsdCents} rate={rate} rounding={rounding} className="items-end whitespace-nowrap rtl:items-start" />
               )}
               {s.balanceUsdCents > 0 && (
-                <span className="block text-xs text-warning md:hidden">{t("owes", { amount: formatMoney(s.balanceUsdCents, "USD") })}</span>
+                <span className="block text-xs text-warning lg:hidden">{t("owes", { amount: formatMoney(s.balanceUsdCents, "USD") })}</span>
               )}
             </TableCell>
             <TableCell className="hidden max-w-40 truncate text-muted-foreground xl:table-cell">{s.methods || "—"}</TableCell>
-            <TableCell className="hidden text-end md:table-cell">
+            <TableCell className="hidden text-end lg:table-cell">
               {s.balanceUsdCents > 0 ? (
                 <Ltr className="font-medium text-warning">{formatMoney(s.balanceUsdCents, "USD")}</Ltr>
               ) : (
@@ -80,7 +80,7 @@ export function SalesTable({ rows, rate, rounding }: { rows: SaleRow[]; rate: nu
               )}
             </TableCell>
             <TableCell className="hidden text-muted-foreground 2xl:table-cell">{s.cashier}</TableCell>
-            <TableCell className="hidden px-2 md:table-cell">
+            <TableCell className="hidden px-2 lg:table-cell">
               <ChevronRight aria-hidden className="size-4 text-subtle-foreground rtl:rotate-180" />
             </TableCell>
           </TableRow>

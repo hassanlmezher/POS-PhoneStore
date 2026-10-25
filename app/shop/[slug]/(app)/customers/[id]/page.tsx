@@ -85,7 +85,7 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
         </div>
       </header>
 
-      <section aria-label={t("overview")} className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <section aria-label={t("overview")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatTile icon={Wrench} label={t("repairs")}>
           {customer.tickets.length}
         </StatTile>
@@ -168,13 +168,16 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
                 <li key={s.id}>
                   <Link
                     href={`/sales/${s.number}`}
-                    className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-muted/40 sm:px-6"
+                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 sm:gap-4 sm:px-6"
                   >
-                    <Ltr className="w-20 shrink-0 font-semibold">#{s.number}</Ltr>
-                    <span className="min-w-0 flex-1 text-sm text-muted-foreground">
-                      {format.dateTime(s.createdAt, { dateStyle: "medium" })} · {t("itemsCount", { count: s._count.items })}
+                    {/* Number and date stack on phones, sit side by side from sm. */}
+                    <span className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-4">
+                      <Ltr className="shrink-0 font-semibold sm:w-20">#{s.number}</Ltr>
+                      <span className="truncate text-sm text-muted-foreground">
+                        {format.dateTime(s.createdAt, { dateStyle: "medium" })} · {t("itemsCount", { count: s._count.items })}
+                      </span>
                     </span>
-                    <span className="flex items-center gap-2">
+                    <span className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2 rtl:items-start">
                       {voided && <Badge variant="destructive">{t("voided")}</Badge>}
                       {s.balanceUsdCents > 0 && (
                         <Badge variant="warning">
@@ -186,10 +189,10 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
                         rate={rate}
                         rounding={shop.lbpRounding}
                         layout="inline"
-                        className={voided ? "text-sm line-through opacity-60" : "text-sm"}
+                        className={voided ? "text-sm whitespace-nowrap line-through opacity-60" : "text-sm whitespace-nowrap"}
                       />
-                      <ChevronRight aria-hidden className="size-4 text-subtle-foreground rtl:rotate-180" />
                     </span>
+                    <ChevronRight aria-hidden className="size-4 shrink-0 text-subtle-foreground rtl:rotate-180" />
                   </Link>
                 </li>
               );

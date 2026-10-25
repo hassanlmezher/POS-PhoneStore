@@ -72,7 +72,7 @@ export default async function AdminShopPage({ params }: PageProps<"/admin/tenant
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="flex min-w-0 flex-col gap-6">
           <SubscriptionPanel
             shopId={shop.id}

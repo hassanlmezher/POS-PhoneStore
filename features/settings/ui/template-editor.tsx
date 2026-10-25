@@ -32,8 +32,8 @@ export function TemplateEditor({ templates, sample, readOnly }: Props) {
   const dirty = (k: Key) => drafts[k].EN !== saved[k].EN || drafts[k].AR !== saved[k].AR;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
-      <nav aria-label={t("listLabel")} className="-mx-1 overflow-x-auto px-1 lg:mx-0 lg:overflow-visible lg:px-0">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+      <nav aria-label={t("listLabel")} className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none] lg:mx-0 lg:overflow-visible lg:px-0">
         <ul className="flex min-w-max gap-2 lg:min-w-0 lg:flex-col lg:gap-1">
           {templates.map(({ key }) => (
             <li key={key}>
@@ -126,7 +126,7 @@ function TemplateCard({
         </>
       }
     >
-      <div className="grid gap-8 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
         <LocaleEditor locale="EN" body={draft.EN} error={errors.EN} onChange={(b) => onChange("EN", b)} sample={sample} readOnly={readOnly} />
         <LocaleEditor locale="AR" body={draft.AR} error={errors.AR} onChange={(b) => onChange("AR", b)} sample={sample} readOnly={readOnly} />
       </div>

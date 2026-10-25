@@ -136,7 +136,7 @@ export default async function SalePage({
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Card title={t("items")} className={cn(voided && "opacity-75")}>
           <ul className="divide-y">
             {sale.items.map((i) => {

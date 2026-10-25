@@ -99,7 +99,7 @@ export function EditDetailsButton({ ticketId, details, rate, rounding }: { ticke
             <DialogDescription>{t("editDetailsBody")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={ti("imei")} htmlFor="ed-imei" optional>
                 <Input id="ed-imei" dir="ltr" className="text-start" value={form.imei} onChange={(e) => set("imei", e.target.value)} />
               </Field>
@@ -138,7 +138,7 @@ export function EditDetailsButton({ ticketId, details, rate, rounding }: { ticke
                 })}
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field label={ti("estimate")} htmlFor="ed-est" error={errors.estimate}>
                 <MoneyInput {...fieldAria("ed-est", errors.estimate)} value={form.estimate} onValueChange={(v) => set("estimate", v)} rate={rate} rounding={rounding} />
               </Field>

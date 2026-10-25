@@ -20,13 +20,13 @@ const tones = {
 /** Compact KPI tile: label, big value, icon. */
 export function StatTile({ icon: Icon, label, children, tone = "default", className }: StatTileProps) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 rounded-xl border bg-card p-4 shadow-card sm:p-5", className)}>
+    <div className={cn("flex min-w-0 items-start justify-between gap-2 rounded-xl border bg-card p-3.5 shadow-card sm:gap-3 sm:p-5", className)}>
       <div className="min-w-0 space-y-1.5">
         <p className="text-sm text-muted-foreground">{label}</p>
         <div className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{children}</div>
       </div>
-      <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg", tones[tone])}>
-        <Icon className="size-5" aria-hidden />
+      <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-10", tones[tone])}>
+        <Icon className="size-4 sm:size-5" aria-hidden />
       </div>
     </div>
   );

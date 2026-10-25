@@ -53,6 +53,16 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
   const listId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
   const cartRef = useRef<HTMLElement>(null);
+  const totalsRef = useRef<HTMLElement>(null);
+  // Phone: the floating "View cart" bar hides while the cart's total and Charge button are on screen.
+  const [totalsInView, setTotalsInView] = useState(false);
+  useEffect(() => {
+    const el = totalsRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setTotalsInView(entry.isIntersecting), { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
@@ -241,7 +251,7 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
   const errorText = error && !stale ? (t.has(`errors.${errCode}`) ? t(`errors.${errCode}`, { detail: errDetail ?? "" }) : t("errors.generic")) : null;
 
   return (
-    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_21rem] md:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_21rem] md:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
       {/* ---- Start side: scan / search + results ---- */}
       <section aria-label={t("searchSection")} className="flex min-w-0 flex-col gap-3">
         <form
@@ -452,7 +462,7 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
         </div>
 
         {/* Totals + charge: always visible at the bottom of the panel */}
-        <footer className="flex flex-col gap-3 border-t bg-muted/30 p-4">
+        <footer ref={totalsRef} className="flex flex-col gap-3 border-t bg-muted/30 p-4">
           <dl className="flex flex-col gap-1.5 text-sm">
             {totals.discount > 0 && (
               <div className="flex justify-between gap-3 text-muted-foreground">
@@ -529,7 +539,7 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
       </section>
 
       {/* Phone: jump to the cart */}
-      {lines.length > 0 && (
+      {lines.length > 0 && !totalsInView && (
         <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 px-4 md:hidden">
           <Button
             className="h-14 w-full justify-between text-base shadow-pop"

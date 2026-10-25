@@ -70,7 +70,7 @@ export default async function CashPage({ params, searchParams }: PageProps<"/sho
             <span className="text-muted-foreground sm:ms-auto">{t("salesCount", { count: totals.salesCount })}</span>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:grid-rows-[auto_auto_auto_1fr]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:grid-rows-[auto_auto_auto_1fr]">
               <section aria-label={t("expectedInDrawer")} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:col-start-1">
                 {(
                   [
@@ -92,7 +92,7 @@ export default async function CashPage({ params, searchParams }: PageProps<"/sho
               </SectionCard>
 
               {!readOnly && (
-                <div className="grid content-start gap-6 md:grid-cols-2 xl:col-start-2 xl:row-span-4 xl:row-start-1 xl:grid-cols-1">
+                <div className="grid grid-cols-1 content-start gap-6 md:grid-cols-2 xl:col-start-2 xl:row-span-4 xl:row-start-1 xl:grid-cols-1">
                   <SectionCard title={t("payInOut")} description={t("payInOutHint")}>
                     <MovementForm reasons={{ PAY_IN: reasons("PAY_IN"), PAY_OUT: reasons("PAY_OUT") }} />
                   </SectionCard>
@@ -112,7 +112,7 @@ export default async function CashPage({ params, searchParams }: PageProps<"/sho
           </div>
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SectionCard title={t("openDrawer")} description={t("openHint")}>
             {readOnly ? <p className="text-sm text-muted-foreground">{t("readOnly")}</p> : <OpenDrawerForm />}
           </SectionCard>

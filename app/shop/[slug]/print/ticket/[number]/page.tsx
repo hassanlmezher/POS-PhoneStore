@@ -143,7 +143,7 @@ export default async function PrintTicketPage({ params, searchParams }: PageProp
         </div>
       )}
 
-      <div className={cn("mt-8 grid gap-6", a4 && "grid-cols-2")}>
+      <div className={cn("mt-8 grid grid-cols-1 gap-6", a4 && "grid-cols-2")}>
         <div>
           <div className="h-10 border-b" />
           <p className="mt-1 text-center text-[10px]">{t("customerSignature")}</p>

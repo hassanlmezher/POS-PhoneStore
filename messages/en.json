@@ -51,6 +51,7 @@
     "dashboard": "Dashboard",
     "tickets": "Repairs",
     "pos": "Point of sale",
+    "posShort": "POS",
     "customers": "Customers",
     "inventory": "Inventory",
     "cash": "Cash drawer",

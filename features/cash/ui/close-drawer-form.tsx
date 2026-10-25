@@ -59,7 +59,7 @@ export function CloseDrawerForm({ expectedUsdCents, expectedLbp }: { expectedUsd
   return (
     <form onSubmit={(e) => e.preventDefault()} noValidate className="flex flex-col gap-4">
       <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">{t("countHint")}</p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <Field label={t("countedUsd")} htmlFor="close-usd" error={errors.countedUsd}>
           <MoneyInput {...fieldAria("close-usd", errors.countedUsd)} currency="USD" value={usd} onValueChange={setUsd} placeholder="0.00" />
         </Field>

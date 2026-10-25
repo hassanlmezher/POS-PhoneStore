@@ -40,13 +40,16 @@ export function AdminShell({ appName, children }: { appName: string; children: R
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
+                aria-label={label}
+                title={label}
                 className={cn(
-                  "flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+                  "flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
                   active ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 <Icon className="size-4" aria-hidden />
-                {label}
+                {/* Phones: icons only, so the language and sign-out buttons stay on screen. */}
+                <span className="hidden sm:inline">{label}</span>
               </Link>
             ))}
           </nav>

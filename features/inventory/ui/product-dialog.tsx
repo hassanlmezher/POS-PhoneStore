@@ -137,7 +137,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("sku")} htmlFor="prod-sku" optional error={errors.sku}>
               <Input
                 {...fieldAria("prod-sku", errors.sku)}
@@ -171,7 +171,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
               ))}
             </datalist>
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={t("cost")} htmlFor="prod-cost" optional error={errors.cost}>
               <MoneyInput {...fieldAria("prod-cost", errors.cost)} value={cost} onValueChange={setCost} rate={rate} rounding={rounding} />
             </Field>
@@ -189,7 +189,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
               </span>
             </p>
           )}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {!product && (
               <Field label={t("openingStock")} htmlFor="prod-qty" error={errors.initialQty} hint={t("openingStockHint")}>
                 <Input
