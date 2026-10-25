@@ -181,11 +181,9 @@ Production environment variables (Vercel → Project → Settings → Environmen
 text of `certs/supabase-prod-ca-2021.crt`), `BETTER_AUTH_SECRET`, `APP_SECRET` (never change it: it decrypts
 saved device passcodes), `ROOT_DOMAIN=inchouf.com`, `ADMIN_SUBDOMAIN=pos-admin`.
 
-**Deploy a new version** (from the project folder):
-
-```bash
-vercel deploy --prod
-```
+**Deploy a new version:** push to `main` on GitHub (https://github.com/hassanlmezher/POS-PhoneStore).
+Vercel is connected to the repo and builds + deploys every push to `main` automatically (other branches get
+preview deployments). Manual fallback from the project folder: `vercel deploy --prod`.
 
 Database migrations are not run by Vercel: apply them first with `pnpm exec prisma migrate deploy`.
 
