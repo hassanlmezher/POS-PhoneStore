@@ -501,7 +501,8 @@
       "liveNo": "Starting…",
       "startingHint": "New addresses usually go live within 1–2 minutes (DNS + HTTPS certificate).",
       "cacheHint": "If a browser still shows \"Unknown host\", that device remembers the old address for up to 5 minutes. Wait a moment and refresh.",
-      "checkAgain": "Check again"
+      "checkAgain": "Check again",
+      "waiting": "Getting the web address ready (usually under a minute). Please don't open the link yet: opening it too early can show \"Unknown host\" for a few minutes."
     },
     "deleteShop": {
       "title": "Delete shop",

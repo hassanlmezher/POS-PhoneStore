@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // Browsers must not look up links in advance: a shop address looked up before its DNS record
+          // exists gets cached as "Unknown host" for minutes.
+          { key: "X-DNS-Prefetch-Control", value: "off" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },

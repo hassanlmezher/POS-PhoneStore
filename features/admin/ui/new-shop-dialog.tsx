@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CircleCheck, ExternalLink, Plus } from "lucide-react";
+import { CircleCheck, ExternalLink, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Field, fieldAria } from "@/components/field";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
-import { createShop } from "@/features/admin/actions";
+import { checkShopLive, createShop } from "@/features/admin/actions";
 import { formatMoney } from "@/lib/money";
 import { slugHint, slugify } from "./slug";
 
@@ -54,7 +54,27 @@ function NewShopDialog({ rootDomain, protocol, plans, onClose }: Props & { onClo
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [created, setCreated] = useState<{ url: string; email: string; password: string } | null>(null);
+  const [created, setCreated] = useState<{ id: string; url: string; email: string; password: string; live: boolean } | null>(null);
+
+  // Don't show "Open shop" until the address answers: opening (or prefetching) it earlier makes the
+  // user's network cache the old wildcard answer ("Unknown host") for ~5 minutes.
+  useEffect(() => {
+    if (!created || created.live) return;
+    let stop = false;
+    const started = Date.now();
+    const tick = async () => {
+      if (stop) return;
+      const { live } = await checkShopLive(created.id).catch(() => ({ live: false }));
+      if (stop) return;
+      if (live || Date.now() - started > 5 * 60_000) setCreated((c) => (c ? { ...c, live: true } : c));
+      else setTimeout(tick, 5000);
+    };
+    const first = setTimeout(tick, 4000);
+    return () => {
+      stop = true;
+      clearTimeout(first);
+    };
+  }, [created]);
   const set = <K extends keyof typeof v>(k: K, value: (typeof v)[K]) => setV((p) => ({ ...p, [k]: value }));
 
   const hint = slugHint(v.slug);
@@ -80,7 +100,13 @@ function NewShopDialog({ rootDomain, protocol, plans, onClose }: Props & { onClo
       toast.success(t("created", { name: v.name.trim() }));
       if (res.domain.status === "ok") toast.success(td("autoOk"));
       else if (res.domain.status === "error") toast.warning(td("failedDetail", { detail: res.domain.detail ?? "" }));
-      setCreated({ url: `${protocol}://${res.slug}.${rootDomain}`, email: v.ownerEmail.trim().toLowerCase(), password: v.ownerPassword });
+      setCreated({
+        id: res.id,
+        url: `${protocol}://${res.slug}.${rootDomain}`,
+        email: v.ownerEmail.trim().toLowerCase(),
+        password: v.ownerPassword,
+        live: res.domain.status !== "ok",
+      });
       router.refresh();
     });
   }
@@ -114,13 +140,26 @@ function NewShopDialog({ rootDomain, protocol, plans, onClose }: Props & { onClo
                 </div>
               ))}
             </dl>
+            {!created.live && (
+              <p role="status" className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                {td("waiting")}
+              </p>
+            )}
             <DialogFooter className="pt-2">
-              <Button variant="outline" asChild>
-                <a href={created.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="rtl:-scale-x-100" />
-                  {t("openShop")}
-                </a>
-              </Button>
+              {created.live ? (
+                <Button variant="outline" asChild>
+                  <a href={created.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="rtl:-scale-x-100" />
+                    {t("openShop")}
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  <Loader2 className="animate-spin" />
+                  {td("liveNo")}
+                </Button>
+              )}
               <Button onClick={onClose}>{t("done")}</Button>
             </DialogFooter>
           </>

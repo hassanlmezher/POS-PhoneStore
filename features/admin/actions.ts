@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { createUserWithPassword, setUserPassword } from "@/lib/accounts";
 import { applyShopDefaults } from "@/lib/shop-defaults";
-import { provisionShopDomain, removeShopDomain, type DomainResult } from "@/lib/domains";
+import { isShopLive, provisionShopDomain, removeShopDomain, type DomainResult } from "@/lib/domains";
 import { deleteShopData } from "@/lib/shop-delete";
 import { requireSuperAdmin } from "@/lib/tenant";
 import {
@@ -100,6 +100,13 @@ export async function updateShopBasics(shopId: string, input: { name: string; sl
   }
   refresh();
   return { ok: true };
+}
+
+/** Polled by the admin after creating a shop: is its address answering yet? */
+export async function checkShopLive(shopId: string): Promise<{ live: boolean }> {
+  await requireSuperAdmin();
+  const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { slug: true } });
+  return { live: shop ? await isShopLive(shop.slug) : false };
 }
 
 /** Admin "set up web address" button: (re)creates <slug>.domain on Vercel + Cloudflare. */

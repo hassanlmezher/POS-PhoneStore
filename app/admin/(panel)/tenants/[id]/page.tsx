@@ -56,12 +56,19 @@ export default async function AdminShopPage({ params }: PageProps<"/admin/tenant
         }
         description={<bdi dir="ltr">{shopOrigin(shop.slug).replace(/^https?:\/\//, "")}</bdi>}
         actions={
-          <Button variant="outline" asChild>
-            <a href={shopOrigin(shop.slug)} target="_blank" rel="noopener noreferrer">
+          domainStatus.configured && !domainStatus.live ? (
+            <Button variant="outline" disabled>
               <ExternalLink className="rtl:-scale-x-100" />
               {t("openShop")}
-            </a>
-          </Button>
+            </Button>
+          ) : (
+            <Button variant="outline" asChild>
+              <a href={shopOrigin(shop.slug)} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="rtl:-scale-x-100" />
+                {t("openShop")}
+              </a>
+            </Button>
+          )
         }
       />
 

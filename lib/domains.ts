@@ -137,6 +137,16 @@ export async function shopDomainStatus(slug: string): Promise<DomainStatus> {
   return { host, configured: true, vercel: vercelState, dns, live };
 }
 
+/**
+ * True when the shop's address already answers from this app. Used before showing "Open shop", so the
+ * first lookup on the user's network happens after the new DNS record is published everywhere (an early
+ * lookup would get the *.domain wildcard answer and devices/routers would cache it for 5 minutes).
+ * Always true where automatic addresses aren't configured.
+ */
+export async function isShopLive(slug: string): Promise<boolean> {
+  return env().configured ? isLive(hostFor(slug)) : true;
+}
+
 /** True when https://host answers from Vercel (our app), not from another site via the wildcard. */
 async function isLive(host: string): Promise<boolean> {
   try {
