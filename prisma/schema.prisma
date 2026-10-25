@@ -160,7 +160,7 @@ model ShopLogo {
 // Platform-wide settings (single row, id "platform"), edited by the super admin.
 model PlatformSetting {
   id               String   @id @default("platform")
-  appName          String   @default("RepairPOS")
+  appName          String   @default("InChouf")
   contactWhatsapp  String?
   contactEmail     String?
   // Shop whose live (demo) data illustrates the landing page.

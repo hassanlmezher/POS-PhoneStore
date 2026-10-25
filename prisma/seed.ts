@@ -1,7 +1,7 @@
 // Seed: super admin, device catalog, a "demo" shop with staff and rich demo data (prisma/seed-demo.ts),
 // and a second empty shop for isolation tests.
 // Dev logins (all use DEV_PASSWORD):
-//   admin@repairpos.local   → admin.localhost:3000
+//   admin@inchouf.local   → admin.localhost:3000
 //   owner@demo.local, tech@demo.local, tech2@demo.local, cashier@demo.local → demo.localhost:3000
 //   owner@other.local       → other.localhost:3000
 import "dotenv/config";
@@ -22,7 +22,7 @@ if (DEV_PASSWORD.length < 10 && isProd) {
   console.error("Set SEED_PASSWORD (10+ characters) to seed a production database.");
   process.exit(1);
 }
-const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? "admin@repairpos.local";
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? "admin@inchouf.local";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg(pgConfig()),
@@ -94,7 +94,7 @@ async function main() {
     update: {},
     create: {
       id: "platform",
-      appName: process.env.APP_NAME || "RepairPOS",
+      appName: process.env.APP_NAME || "InChouf",
       contactWhatsapp: process.env.CONTACT_WHATSAPP || null,
       contactEmail: process.env.CONTACT_EMAIL || null,
       showcaseShopSlug: "demo",

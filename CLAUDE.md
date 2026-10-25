@@ -9,10 +9,10 @@
 - UI work: the `ui-designer` subagent ([.claude/agents/ui-designer.md](.claude/agents/ui-designer.md)).
 
 ### Current status
-- **Phase:** 6 done + fixes (2026-10-24). App runs on Supabase Postgres; no business data left in code (platform settings, quick picks, shop time zone/country code, landing preview all from the DB).
+- **Phase:** 6 done + fixes (2026-10-25). App renamed InChouf; admin login is the owner's own e-mail; test shop "other" removed from production (only demo + bilal); demo staff passwords changed (owner knows them). App runs on Supabase Postgres; no business data left in code (platform settings, quick picks, shop time zone/country code, landing preview all from the DB).
 - **Done:** Phases 1–5 + Phase 6: landing page (features, pricing from plans, FAQ, EN/AR), deterministic demo seed (`prisma/seed-demo.ts`: 20 customers, 50 products, 30 tickets, ~50 sales, daily drawers, all cross-checked), production stack (`docker-compose.prod.yml`, `Caddyfile` on-demand TLS + `/api/tls-check`, nightly backups), `docs/DEPLOY.md`. Production build + standalone server verified locally with Caddy-style headers.
 - **Next:** owner review on the live site; then a VPS for 24/7 hosting.
-- **Open issues:** LIVE on Vercel (free Hobby, project `inchouf-pos`, region fra1): https://demo.inchouf.com + https://pos-admin.inchouf.com, DNS-only CNAMEs on Cloudflare. Vercel Hobby = non-commercial; upgrade or move to a VPS when shops pay. New shops get their address automatically (lib/domains.ts; keys set on Vercel, verified live with a throwaway shop); "Delete shop" in the admin removes the address too. Migrations must be applied manually before deploying. Seeded password in data/credentials.txt. Git: https://github.com/hassanlmezher/POS-PhoneStore (main); every push to main auto-deploys on Vercel.
+- **Open issues:** LIVE on Vercel (free Hobby, project `inchouf-pos`, region fra1): https://demo.inchouf.com + https://pos-admin.inchouf.com, DNS-only CNAMEs on Cloudflare. Vercel Hobby = non-commercial; upgrade or move to a VPS when shops pay. New shops get their address automatically (lib/domains.ts; keys set on Vercel, verified live with a throwaway shop); "Delete shop" in the admin removes the address too. Migrations must be applied manually before deploying. Change any login with scripts/set-login.ts. Git: https://github.com/hassanlmezher/POS-PhoneStore (main); every push to main auto-deploys on Vercel.
 
 ### Testing
 Full route test with temporary accounts (never real passwords):
