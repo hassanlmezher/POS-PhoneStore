@@ -196,3 +196,17 @@ automatically (Vercel domain + Cloudflare DNS-only CNAME), and the shop page in 
 
 **Limits of the free plan:** Vercel Hobby is for non-commercial use. When shops start paying, upgrade to
 Vercel Pro or move to a VPS with the Docker setup above.
+
+
+## Keeping the free Supabase database awake
+
+Supabase pauses free projects after 7 days without activity. The app prevents this on its own:
+
+- **Vercel Cron** (in `vercel.json`) calls `/api/keepalive` every day at 06:00 UTC. It writes one tiny row
+  (`Heartbeat` table), which counts as real database activity.
+- **GitHub Actions backup** (`.github/workflows/keepalive.yml`) calls the same address every 3 days. GitHub
+  turns scheduled workflows off after 60 days without commits in a public repository; re-enable it from the
+  repository's Actions tab if that happens (Vercel Cron keeps working either way).
+- Check it any time: open `https://pos-admin.inchouf.com/api/keepalive`, which shows the last heartbeat time.
+
+On a paid Supabase plan or your own Postgres (Docker) none of this is needed, and it's harmless.

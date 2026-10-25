@@ -1,0 +1,17 @@
+# Backup for the daily Vercel Cron in vercel.json: pings /api/keepalive every 3 days so the free
+# Supabase project is never paused for inactivity (Supabase pauses after 7 days without activity).
+name: Keep database awake
+
+on:
+  schedule:
+    - cron: "17 7 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive endpoint
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 20 --max-time 30 \
+            https://pos-admin.inchouf.com/api/keepalive

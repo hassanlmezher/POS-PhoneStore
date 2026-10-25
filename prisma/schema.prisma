@@ -693,3 +693,10 @@ model AuditLog {
 
   @@index([shopId, createdAt])
 }
+
+// Keep-alive marker (single row, id "keepalive"). /api/keepalive bumps it daily (Vercel Cron) so a free
+// Supabase project never counts as inactive and gets paused. No business data.
+model Heartbeat {
+  id String   @id
+  at DateTime @default(now())
+}
