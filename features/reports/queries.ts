@@ -170,13 +170,34 @@ export async function bestSellers(shopId: string, range: DayRange, limit = 20) {
   }));
 }
 
-/** Profit = (product revenue − cost) + (repair charges − part costs for repairs picked up). */
+/** Expenses in the range per category (USD cents at the rate they were recorded), biggest first. */
+export async function expensesByCategory(shopId: string, range: DayRange) {
+  const rows = await prisma.expense.groupBy({
+    by: ["category"],
+    where: { shopId, spentAt: { gte: range.start, lt: range.end } },
+    _sum: { usdCentsEquivalent: true },
+    _count: true,
+  });
+  return rows
+    .map((r) => ({ category: r.category, count: r._count, usdCents: r._sum.usdCentsEquivalent ?? 0 }))
+    .sort((a, b) => b.usdCents - a.usdCents);
+}
+
+/**
+ * Profit = (product revenue − cost) + (repair charges − part costs for repairs picked up).
+ * Real profit = that profit − the shop's expenses (rent, generator, salaries…).
+ */
 export async function profitSummary(shopId: string, range: DayRange) {
-  const [days, techs] = await Promise.all([salesByDay(shopId, range), revenueByTechnician(shopId, range)]);
+  const [days, techs, expenses] = await Promise.all([
+    salesByDay(shopId, range),
+    revenueByTechnician(shopId, range),
+    expensesByCategory(shopId, range),
+  ]);
   const productRevenue = days.reduce((s, d) => s + d.productRevenue, 0);
   const productCost = days.reduce((s, d) => s + d.productCost, 0);
   const repairRevenue = techs.reduce((s, t) => s + t.chargeUsdCents, 0);
   const repairCost = techs.reduce((s, t) => s + t.partsCostUsdCents, 0);
+  const expensesTotal = expenses.reduce((s, e) => s + e.usdCents, 0);
   return {
     productRevenue,
     productCost,
@@ -187,6 +208,9 @@ export async function profitSummary(shopId: string, range: DayRange) {
     totalRevenue: productRevenue + repairRevenue,
     totalProfit: productRevenue - productCost + repairRevenue - repairCost,
     takings: days.reduce((s, d) => s + d.takings, 0),
+    expenses,
+    expensesTotal,
+    realProfit: productRevenue - productCost + repairRevenue - repairCost - expensesTotal,
     days,
     techs,
   };

@@ -93,6 +93,16 @@ enum CashMovementType {
   PAY_OUT
 }
 
+enum ExpenseCategory {
+  RENT
+  GENERATOR
+  ELECTRICITY
+  SALARIES
+  INTERNET
+  SUPPLIES
+  OTHER
+}
+
 enum TemplateKey {
   TICKET_RECEIVED
   TICKET_READY
@@ -149,6 +159,7 @@ model Shop {
   payments             Payment[]
   cashSessions         CashSession[]
   cashMovements        CashMovement[]
+  expenses             Expense[]
   templates            MessageTemplate[]
   exchangeRates        ExchangeRate[]
   subscriptionPayments SubscriptionPayment[]
@@ -270,6 +281,7 @@ model User {
   openedSessions   CashSession[]     @relation("openedBy")
   closedSessions   CashSession[]     @relation("closedBy")
   cashMovements    CashMovement[]
+  expenses         Expense[]
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -673,10 +685,34 @@ model CashMovement {
   shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
   cashSession CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id])
+  expense     Expense?
 
   @@index([shopId, cashSessionId])
   // Child lookups by foreign key (balances, reports, cascades).
   @@index([cashSessionId])
+}
+
+// Running costs (rent, generator, salaries…) for real profit. Amount is in its own currency
+// (USD cents / whole LBP); usdCentsEquivalent is fixed at the shop rate when recorded.
+model Expense {
+  id                 String          @id @default(cuid())
+  shopId             String
+  category           ExpenseCategory
+  note               String?
+  currency           Currency
+  amount             Int
+  usdCentsEquivalent Int
+  spentAt            DateTime
+  /// Set when it was paid out of the open cash drawer (a PAY_OUT movement).
+  cashMovementId     String?         @unique
+  userId             String
+  createdAt          DateTime        @default(now())
+
+  shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id])
+  cashMovement CashMovement? @relation(fields: [cashMovementId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, spentAt])
 }
 
 // ---------- Messaging ----------

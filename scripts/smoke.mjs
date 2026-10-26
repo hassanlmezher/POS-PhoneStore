@@ -88,22 +88,22 @@ const ownerPages = [
   "/customers", `/customers/${customer}`, "/pos", "/sales", `/sales/${sale}`,
   "/inventory", "/inventory?tab=low", `/inventory/${product}`, "/cash", "/cash?tab=history",
   ...(session ? [`/cash/${session}`] : []),
-  "/reports", "/reports?tab=repairs", "/reports?tab=products", "/reports?tab=balances",
+  "/reports", "/reports?tab=repairs", "/reports?tab=products", "/reports?tab=balances", "/expenses", "/expenses?from=2026-09-01&to=2026-09-30",
   "/settings", "/settings?tab=receipts", "/settings?tab=rate", "/settings?tab=messages", "/settings?tab=staff",
   "/settings?tab=quickPicks",
   `/print/ticket/${ticket}?size=80mm`, `/print/ticket/${ticket}?size=a4&lang=ar`, `/print/sale/${sale}`,
   `/print/labels?ids=${product}`,
-  "/reports/export?type=sales", "/reports/export?type=technicians", "/reports/export?type=products", "/reports/export?type=balances",
+  "/reports/export?type=sales", "/reports/export?type=technicians", "/reports/export?type=products", "/reports/export?type=balances", "/reports/export?type=expenses",
 ];
 for (const p of ownerPages) await check("owner", shopHost, p, owner, 200);
 
 // Cashier: POS/cash/sales yes; reports/settings no.
 for (const p of ["/", "/pos", "/sales", "/cash", "/tickets", "/customers", "/inventory"]) await check("cashier", shopHost, p, cashier, 200);
-for (const p of ["/reports", "/settings", "/reports/export?type=sales"]) await check("cashier", shopHost, p, cashier, 404);
+for (const p of ["/reports", "/settings", "/expenses", "/reports/export?type=sales"]) await check("cashier", shopHost, p, cashier, 404);
 
 // Technician: repairs yes; money pages no.
 for (const p of ["/", "/tickets", "/customers", "/inventory"]) await check("tech", shopHost, p, tech, 200);
-for (const p of ["/pos", "/cash", "/sales", "/reports", "/settings"]) await check("tech", shopHost, p, tech, 404);
+for (const p of ["/pos", "/cash", "/sales", "/reports", "/expenses", "/settings"]) await check("tech", shopHost, p, tech, 404);
 
 // Public + logged out.
 if (!VIA) await check("public", BASE, "/", null, 200); // on the live domain the root is another site

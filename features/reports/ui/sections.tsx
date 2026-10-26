@@ -11,6 +11,7 @@ import { StatTile } from "@/components/stat-tile";
 import { StatusBadge, type TicketStatus } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RealProfitCard } from "@/features/expenses/ui/real-profit-card";
 import { BalancesList } from "@/features/reports/ui/balances-list";
 import { bestSellers, outstandingBalances, profitSummary, repairsByStatus, revenueByTechnician } from "@/features/reports/queries";
 import { startOfDay, type DayRange } from "@/lib/dates";
@@ -71,6 +72,13 @@ export async function OverviewSection({ ctx, range }: Props) {
           </p>
         </StatTile>
       </section>
+
+      <RealProfitCard
+        p={p}
+        rate={shop.exchangeRate}
+        rounding={shop.lbpRounding}
+        expensesHref={`/expenses?${new URLSearchParams({ from: range.from, to: range.to }).toString()}`}
+      />
 
       <SectionCard title={t("salesByDay")} description={t("salesByDayHint")} actions={<ExportButton type="sales" range={range} />}>
         {activeDays.length === 0 ? (

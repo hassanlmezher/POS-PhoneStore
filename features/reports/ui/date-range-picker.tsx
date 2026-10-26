@@ -15,16 +15,18 @@ type Props = {
   presets: RangePreset[];
   /** Other params to keep (e.g. the active tab). */
   keep?: Record<string, string>;
+  /** Page the range applies to. */
+  basePath?: string;
 };
 
-const hrefFor = (from: string, to: string, keep: Record<string, string> = {}) =>
-  `/reports?${new URLSearchParams({ ...keep, from, to }).toString()}`;
+const hrefFor = (basePath: string, from: string, to: string, keep: Record<string, string> = {}) =>
+  `${basePath}?${new URLSearchParams({ ...keep, from, to }).toString()}`;
 
 /**
  * Preset select (Today, Yesterday, Last 7 days, This month, Last month, Custom) that navigates at once,
  * plus from/to day inputs for a custom range. Values are local shop days ("YYYY-MM-DD").
  */
-export function DateRangePicker({ from, to, presets, keep }: Props) {
+export function DateRangePicker({ from, to, presets, keep, basePath = "/reports" }: Props) {
   const t = useTranslations("reports");
   const router = useRouter();
   const current = presets.find((p) => p.from === from && p.to === to)?.key ?? "custom";
@@ -37,7 +39,7 @@ export function DateRangePicker({ from, to, presets, keep }: Props) {
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (f && tt) router.push(hrefFor(f, tt, keep));
+        if (f && tt) router.push(hrefFor(basePath, f, tt, keep));
       }}
     >
       <NativeSelect
@@ -47,7 +49,7 @@ export function DateRangePicker({ from, to, presets, keep }: Props) {
         onChange={(e) => {
           const p = presets.find((x) => x.key === e.target.value);
           setMode(e.target.value);
-          if (p) router.push(hrefFor(p.from, p.to, keep));
+          if (p) router.push(hrefFor(basePath, p.from, p.to, keep));
         }}
       >
         {presets.map((p) => (

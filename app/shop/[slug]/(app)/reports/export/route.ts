@@ -1,10 +1,11 @@
-import { dayRange } from "@/lib/dates";
+import { prisma } from "@/lib/db";
+import { dayKey, dayRange } from "@/lib/dates";
 import { formatTicketNumber } from "@/lib/numbering";
 import { requirePermission } from "@/lib/tenant";
 import { centsToDecimal, toCsv } from "@/features/reports/csv";
 import { bestSellers, outstandingBalances, revenueByTechnician, salesByDay } from "@/features/reports/queries";
 
-// CSV export: /reports/export?type=sales|technicians|products|balances&from=YYYY-MM-DD&to=YYYY-MM-DD
+// CSV export: /reports/export?type=sales|technicians|products|balances|expenses&from=YYYY-MM-DD&to=YYYY-MM-DD
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const { shop } = await requirePermission(slug, "reports");
@@ -55,6 +56,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
           centsToDecimal(r.revenueUsdCents),
           centsToDecimal(r.costUsdCents),
           centsToDecimal(r.profitUsdCents),
+        ]),
+      );
+      break;
+    }
+    case "expenses": {
+      const rows = await prisma.expense.findMany({
+        where: { shopId: shop.id, spentAt: { gte: range.start, lt: range.end } },
+        orderBy: { spentAt: "asc" },
+        select: { spentAt: true, category: true, note: true, currency: true, amount: true, usdCentsEquivalent: true, cashMovementId: true },
+      });
+      csv = toCsv(
+        ["date", "category", "note", "currency", "amount", "usd_equivalent", "from_drawer"],
+        rows.map((r) => [
+          dayKey(r.spentAt, shop.timezone),
+          r.category.toLowerCase(),
+          r.note,
+          r.currency,
+          r.currency === "USD" ? centsToDecimal(r.amount) : r.amount,
+          centsToDecimal(r.usdCentsEquivalent),
+          r.cashMovementId ? "yes" : "no",
         ]),
       );
       break;
