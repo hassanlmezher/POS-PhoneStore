@@ -33,6 +33,8 @@ export type BoardCard = {
   overdue: boolean;
   techName: string | null;
   balanceUsdCents: number;
+  /** Latest price approval request sent to the customer, if any. */
+  approval: "PENDING" | "APPROVED" | "DECLINED" | null;
 };
 
 type Column = { key: string; statuses: readonly TicketStatusValue[]; dropTo: TicketStatusValue };
@@ -207,6 +209,7 @@ function BoardCardView({
 }) {
   const t = useTranslations("tickets");
   const ts = useTranslations("status");
+  const ta = useTranslations("approval");
   const format = useFormatter();
   return (
     <li
@@ -259,6 +262,18 @@ function BoardCardView({
           </DropdownMenu>
         )}
       </div>
+      {card.approval && !isClosed(card.status) && (
+        <span
+          className={cn(
+            "mt-2 inline-flex rounded-md px-1.5 py-0.5 text-xs font-medium",
+            card.approval === "PENDING" && "bg-warning-soft text-warning",
+            card.approval === "APPROVED" && "bg-success-soft text-success",
+            card.approval === "DECLINED" && "bg-destructive-soft text-destructive",
+          )}
+        >
+          {ta(card.approval === "PENDING" ? "chipPending" : card.approval === "APPROVED" ? "chipApproved" : "chipDeclined")}
+        </span>
+      )}
       {card.balanceUsdCents > 0 && (
         <div className="mt-2 flex items-baseline gap-2 text-xs">
           <span className="text-muted-foreground">{t("balance")}</span>

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_COOKIE, LOCALE_HEADER, isLocale } from "@/i18n/config";
 import {
   ADMIN_PATH,
   DEV_SHOP_COOKIE,
@@ -93,7 +94,13 @@ function rewriteTo(req: NextRequest, pathname: string, tenant: HostKind) {
   const headers = new Headers(req.headers);
   headers.set(REWRITE_HEADER, REWRITE_TOKEN);
   headers.set(TENANT_HEADER, tenantHeaderValue(tenant)!);
-  return NextResponse.rewrite(target, { request: { headers } });
+  // ?lang=en|ar (links sent to customers) opens the page in that language and remembers it.
+  headers.delete(LOCALE_HEADER);
+  const lang = req.nextUrl.searchParams.get("lang");
+  if (isLocale(lang)) headers.set(LOCALE_HEADER, lang);
+  const res = NextResponse.rewrite(target, { request: { headers } });
+  if (isLocale(lang)) res.cookies.set(LOCALE_COOKIE, lang, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  return res;
 }
 
 export const config = {

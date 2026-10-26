@@ -81,6 +81,13 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
 enum CashMovementType {
   PAY_IN
   PAY_OUT
@@ -132,6 +139,7 @@ model Shop {
   ticketItems          TicketItem[]
   ticketStatusLogs     TicketStatusLog[]
   ticketNotes          TicketNote[]
+  priceApprovals       PriceApproval[]
   products             Product[]
   stockMovements       StockMovement[]
   sales                Sale[]
@@ -253,6 +261,7 @@ model User {
   createdTickets   Ticket[]          @relation("createdBy")
   statusLogs       TicketStatusLog[]
   ticketNotes      TicketNote[]
+  priceApprovals   PriceApproval[]
   stockMovements   StockMovement[]
   sales            Sale[]
   payments         Payment[]
@@ -397,6 +406,7 @@ model Ticket {
   items       TicketItem[]
   statusLogs  TicketStatusLog[]
   notes       TicketNote[]
+  approvals   PriceApproval[]
   payments    Payment[]
   saleItems   SaleItem[]
 
@@ -699,4 +709,28 @@ model AuditLog {
 model Heartbeat {
   id String   @id
   at DateTime @default(now())
+}
+
+// "Approve the new price" request sent to the customer as a WhatsApp link (public page /approve/<token>).
+model PriceApproval {
+  id               String         @id @default(cuid())
+  shopId           String
+  ticketId         String
+  token            String         @unique
+  /// New total price the customer is asked to accept (USD cents).
+  amountUsdCents   Int
+  /// What the ticket was charging when the request was made, shown for comparison.
+  previousUsdCents Int?
+  reason           String
+  status           ApprovalStatus @default(PENDING)
+  createdById      String
+  createdAt        DateTime       @default(now())
+  respondedAt      DateTime?
+
+  shop      Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
+
+  @@index([shopId, ticketId])
+  @@index([shopId, status])
 }

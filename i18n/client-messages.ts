@@ -13,9 +13,10 @@ const AREAS = {
     ...BASE,
     "nav", "roles", "search", "pattern", "status", "ticket", "tickets", "intake", "accessories", "pos", "cash",
     "inventory", "product", "productTypes", "movementReasons", "customers", "sales", "reports", "settings",
-    "templates", "paymentMethods", "stock", "warranty", "dashboard",
+    "templates", "paymentMethods", "stock", "warranty", "dashboard", "approval",
   ],
   track: [...BASE, "track", "status"],
+  approve: [...BASE, "approval"],
 } as const;
 
 export async function clientMessages(area: keyof typeof AREAS | "all"): Promise<AbstractIntlMessages> {

@@ -49,6 +49,7 @@ export const ticketCardSelect = {
   _count: { select: { items: true } },
   payments: { select: { usdCentsEquivalent: true } },
   saleItems: { where: { sale: { status: "COMPLETED" } }, select: { qty: true, unitPriceUsdCents: true, discountUsdCents: true } },
+  approvals: { where: { status: { not: "CANCELLED" } }, orderBy: { createdAt: "desc" }, take: 1, select: { status: true } },
 } satisfies Prisma.TicketSelect;
 
 type CardRow = Prisma.TicketGetPayload<{ select: typeof ticketCardSelect }>;
@@ -63,11 +64,12 @@ export function deviceName(t: {
 }
 
 function toCard(t: CardRow) {
-  const { payments, saleItems, _count, ...rest } = t;
+  const { payments, saleItems, _count, approvals, ...rest } = t;
   void payments;
   void saleItems;
   void _count;
-  return { ...rest, device: deviceName(t), balanceUsdCents: ticketBalance(t), chargeUsdCents: ticketCharge(t) };
+  const approval = (approvals[0]?.status ?? null) as "PENDING" | "APPROVED" | "DECLINED" | null;
+  return { ...rest, device: deviceName(t), balanceUsdCents: ticketBalance(t), chargeUsdCents: ticketCharge(t), approval };
 }
 export type TicketCard = ReturnType<typeof toCard>;
 

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowRight, CalendarClock, ChevronLeft, MessageSquareText, Phone, ShieldCheck, ShoppingCart, UserRound } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarClock, ChevronLeft, MessageSquareText, Phone, ShieldCheck, ShoppingCart, UserRound } from "lucide-react";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { approvalWhatsApp } from "@/features/approvals/link";
+import { ApprovalCard, type ApprovalView } from "@/features/approvals/ui/approval-card";
 import { suggestedTemplate, ticketWhatsAppLinks } from "@/features/tickets/notify";
 import { getTicketByNumber, listTechnicians } from "@/features/tickets/queries";
 import { CreatedBanner } from "@/features/tickets/ui/detail/created-banner";
@@ -58,14 +60,20 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
   const ticket = await getTicketByNumber(ctx, number);
   if (!ticket) notFound();
 
-  const [links, technicians, t, ta, tm, ts, format] = await Promise.all([
+  const [links, technicians, t, ta, tm, ts, tap, format, approvals] = await Promise.all([
     ticketWhatsAppLinks(ctx, ticket),
     listTechnicians(shop.id),
     getTranslations("ticket"),
     getTranslations("accessories"),
     getTranslations("paymentMethods"),
     getTranslations("status"),
+    getTranslations("approval"),
     getFormatter(),
+    ctx.db.priceApproval.findMany({
+      where: { ticketId: ticket.id, status: { not: "CANCELLED" } },
+      orderBy: { createdAt: "desc" },
+      include: { createdBy: { select: { name: true } } },
+    }),
   ]);
 
   const label = formatTicketNumber(shop.ticketPrefix, ticket.number);
@@ -78,10 +86,43 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
   const overdue = isOverdue(ticket.promisedAt, ticket.status);
   const dt = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeStyle: "short" });
 
-  type Entry = { id: string; at: Date; who: string; kind: "status" | "note"; from?: string | null; to?: string; body?: string | null };
+  // Latest price approval request (cancelled ones are hidden); pending ones get their WhatsApp link.
+  const latest = approvals[0];
+  const approval: ApprovalView | null = latest
+    ? {
+        id: latest.id,
+        status: latest.status as ApprovalView["status"],
+        amountUsdCents: latest.amountUsdCents,
+        previousUsdCents: latest.previousUsdCents,
+        reason: latest.reason,
+        sentAt: dt(latest.createdAt),
+        answeredAt: latest.respondedAt ? dt(latest.respondedAt) : null,
+        ...(latest.status === "PENDING" &&
+          (await approvalWhatsApp(shop, ticket.customer, { number: ticket.number, device: ticket.device }, latest).then((w) => ({ waUrl: w.url, link: w.link })))),
+      }
+    : null;
+  const closed = ticket.status === "PICKED_UP" || ticket.status === "CANCELLED";
+  const showApproval = !!approval || (canStatus && !closed);
+
+  type Entry = { id: string; at: Date; who: string; kind: "status" | "note" | "approval"; from?: string | null; to?: string; body?: string | null; text?: string };
+  // "@key" notes are written by the system and translated here.
+  const systemNote = (note: string | null) => (note === "@approvedByCustomer" ? tap("systemApproved") : note);
   const timeline: Entry[] = [
-    ...ticket.statusLogs.map((l) => ({ id: l.id, at: l.createdAt, who: l.user.name, kind: "status" as const, from: l.from, to: l.to, body: l.note })),
+    ...ticket.statusLogs.map((l) => ({ id: l.id, at: l.createdAt, who: l.user.name, kind: "status" as const, from: l.from, to: l.to, body: systemNote(l.note) })),
     ...ticket.notes.map((n) => ({ id: n.id, at: n.createdAt, who: n.user.name, kind: "note" as const, body: n.body })),
+    ...approvals.flatMap((a) => {
+      const price = formatMoney(a.amountUsdCents, "USD");
+      const asked: Entry = { id: `${a.id}-ask`, at: a.createdAt, who: a.createdBy.name, kind: "approval", text: tap("timelineAsked", { price }), body: a.reason };
+      if (!a.respondedAt || a.status === "PENDING") return [asked];
+      const answer: Entry = {
+        id: `${a.id}-answer`,
+        at: a.respondedAt,
+        who: ticket.customer.name,
+        kind: "approval",
+        text: tap(a.status === "APPROVED" ? "timelineApproved" : "timelineDeclined", { price }),
+      };
+      return [asked, answer];
+    }),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
   return (
@@ -105,6 +146,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
             </h1>
             <StatusBadge status={ticket.status} />
             {overdue && <Badge variant="destructive">{t("overdue")}</Badge>}
+            {approval?.status === "PENDING" && <Badge variant="warning">{tap("chipPending")}</Badge>}
           </div>
           <p className="text-lg font-medium">{ticket.device}</p>
           <div className="flex flex-wrap items-center gap-x-4 text-sm text-muted-foreground">
@@ -201,7 +243,13 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
                         e.kind === "note" ? "text-primary" : "text-muted-foreground",
                       )}
                     >
-                      {e.kind === "note" ? <MessageSquareText className="size-4" /> : <ArrowRight className="size-4 rtl:rotate-180" />}
+                      {e.kind === "note" ? (
+                        <MessageSquareText className="size-4" />
+                      ) : e.kind === "approval" ? (
+                        <BadgeCheck className="size-4" />
+                      ) : (
+                        <ArrowRight className="size-4 rtl:rotate-180" />
+                      )}
                     </span>
                     <div className="min-w-0 flex-1 pt-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -214,6 +262,8 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
                           ) : (
                             <span className="text-muted-foreground">{t("createdEvent")}</span>
                           )
+                        ) : e.kind === "approval" ? (
+                          <span className="text-muted-foreground">{e.text}</span>
                         ) : (
                           <span className="text-muted-foreground">{t("addedNote")}</span>
                         )}
@@ -229,6 +279,18 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
         </div>
 
         <aside className="flex min-w-0 flex-col gap-6">
+          {showApproval && (
+            <Card title={tap("title")}>
+              <ApprovalCard
+                ticketId={ticket.id}
+                current={approval}
+                canManage={canStatus && !closed}
+                defaultUsdCents={ticket.chargeUsdCents}
+                rate={rate}
+                rounding={rounding}
+              />
+            </Card>
+          )}
           <Card title={t("money")}>
             <dl className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">

@@ -26,6 +26,7 @@ const TENANT_MODELS = new Set<string>([
   "TicketItem",
   "TicketStatusLog",
   "TicketNote",
+  "PriceApproval",
   "Product",
   "StockMovement",
   "Sale",

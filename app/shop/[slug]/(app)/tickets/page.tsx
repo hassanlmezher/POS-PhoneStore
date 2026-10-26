@@ -29,6 +29,7 @@ function toBoardCard(c: TicketCard, prefix: string): BoardCard {
     overdue: isOverdue(c.promisedAt, c.status),
     techName: c.assignedTo?.name ?? null,
     balanceUsdCents: c.balanceUsdCents,
+    approval: c.approval,
   };
 }
 

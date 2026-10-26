@@ -28,6 +28,7 @@ async function main() {
         prisma.ticket.updateMany({ where: { assignedToId: { in: ids } }, data: { assignedToId: null } }),
         prisma.ticketStatusLog.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
         prisma.ticketNote.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
+        prisma.priceApproval.updateMany({ where: { createdById: { in: ids } }, data: { createdById: to } }),
         prisma.stockMovement.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
         prisma.sale.updateMany({ where: { cashierId: { in: ids } }, data: { cashierId: to } }),
         prisma.payment.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
