@@ -100,7 +100,7 @@ export default async function DashboardPage({ params }: PageProps<"/shop/[slug]"
       }
       description={t("readyDescription")}
       padded={false}
-      actions={d.readyCount > 0 && viewAll("/tickets?view=table&status=READY")}
+      actions={d.readyCount > 0 && viewAll("/tickets/pickup")}
     >
       {ready.length === 0 ? (
         <EmptyState icon={CircleCheckBig} title={t("readyEmptyTitle")} body={t("readyEmptyBody")} />

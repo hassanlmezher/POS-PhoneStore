@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseMoney } from "@/lib/money";
 
 const optionalText = (max: number) =>
   z
@@ -32,6 +33,14 @@ export const receiptSettingsInput = z.object({
     .regex(/^[A-Za-z]{0,5}-?$/, "invalidPrefix"),
   defaultWarrantyDays: z.coerce.number().int().min(0).max(3650),
   lbpRounding: z.coerce.number().int().refine((v) => [1, 100, 500, 1000, 5000, 10000].includes(v), "invalid"),
+  storageFreeDays: z.coerce.number().int().min(0, "invalid").max(365, "invalid"),
+  // Storage fee per day in USD ("1.50"); empty or 0 = no fee.
+  storageFeeUsdCents: z
+    .string()
+    .trim()
+    .max(12)
+    .transform((v) => (v === "" ? 0 : parseMoney(v, "USD")))
+    .refine((v): v is number => v !== null && v <= 100_000, "invalidAmount"),
 });
 export type ReceiptSettingsInput = z.input<typeof receiptSettingsInput>;
 

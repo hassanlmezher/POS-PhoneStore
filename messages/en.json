@@ -628,7 +628,8 @@
     "emptyTitle": "No repairs yet",
     "emptyBody": "Create a ticket when a customer drops off a phone. Press N from anywhere.",
     "noResults": "No matching repairs",
-    "noResultsBody": "Try another search or clear the filters."
+    "noResultsBody": "Try another search or clear the filters.",
+    "waitingPickup": "Waiting for pickup"
   },
   "intake": {
     "title": "New repair",
@@ -865,7 +866,8 @@
     "warrantyDays": "{count, plural, =0 {None} one {# day} other {# days}}",
     "terms": "Terms",
     "customerSignature": "Customer signature",
-    "shopSignature": "Shop"
+    "shopSignature": "Shop",
+    "storageNote": "Phones not picked up within {days} days: storage fee {fee} per day."
   },
   "stock": {
     "out": "Out",
@@ -1371,7 +1373,13 @@
       "footer": "Receipt footer",
       "footerHint": "A short line at the bottom, e.g. a thank-you note or opening hours.",
       "terms": "Repair terms",
-      "termsHint": "Printed on the intake ticket above the customer's signature."
+      "termsHint": "Printed on the intake ticket above the customer's signature.",
+      "storageTitle": "Phones not picked up",
+      "storageDescription": "An optional daily storage fee for ready phones left too long. It is printed on the repair ticket and added only when you press the button.",
+      "storageFreeDays": "Free days after ready",
+      "storageFreeDaysHint": "The fee starts after this many days.",
+      "storageFee": "Storage fee per day",
+      "storageFeeHint": "Leave empty for no fee."
     },
     "rate": {
       "currentTitle": "Current rate",
@@ -1607,5 +1615,43 @@
     "questions": "Questions? Contact the shop",
     "whatsapp": "WhatsApp",
     "call": "Call"
+  },
+  "pickup": {
+    "title": "Waiting for pickup",
+    "subtitle": "Phones that are ready but not collected yet. Send a reminder on day 3, 14 and 30.",
+    "subtitleFee": "Phones that are ready but not collected yet. Storage fee: {fee} per day after {free} days.",
+    "setupFee": "Set a storage fee",
+    "feeSettings": "Storage fee settings",
+    "statWaiting": "Waiting for pickup",
+    "statLong": "Waiting 14+ days",
+    "statMoney": "Money waiting",
+    "filter": "Show",
+    "filterAll": "All ({count})",
+    "filterDue": "Reminder due ({count})",
+    "noneDue": "No reminders due right now.",
+    "emptyTitle": "No phones waiting",
+    "emptyBody": "Every ready phone has been picked up.",
+    "daysShort": "{count, plural, one {day} other {days}}",
+    "readySince": "Ready since {date}",
+    "remindersSent": "{count} of 3 reminders sent",
+    "stage": "Day {day} reminder",
+    "lastReminder": "Reminder {count} sent {date}",
+    "noReminder": "No reminder yet",
+    "reminderDue": "Reminder due",
+    "toPay": "To pay",
+    "sendReminder": "Send reminder {n}",
+    "sendAgain": "Send again",
+    "addFee": "Add storage fee {fee}",
+    "updateFee": "Update storage fee to {fee}",
+    "feeAdded": "Storage fee {fee} added",
+    "charged": "Storage fee added to the ticket",
+    "chargeFailed": "Couldn't add the storage fee. Refresh and try again.",
+    "repairLine": "Repair",
+    "storageLine": "Storage fee ({days} days × {fee})",
+    "wa1": "Hi {customer}, good news! Your {device} ({ticket}) is ready at {shop}. You can pick it up any time during opening hours.{extra}\nDetails: {link}",
+    "wa2": "Hi {customer}, a friendly reminder from {shop}: your {device} ({ticket}) has been ready for {days} days and is waiting for you.{extra}\nDetails: {link}",
+    "wa3": "Hi {customer}, your {device} ({ticket}) has been waiting at {shop} for {days} days. Please pick it up as soon as you can, or reply to tell us when you will come.{extra}\nDetails: {link}",
+    "waBalance": "Amount to pay: {balance}.",
+    "waFee": "Please note: after {free} days, storage costs {fee} per day."
   }
 }

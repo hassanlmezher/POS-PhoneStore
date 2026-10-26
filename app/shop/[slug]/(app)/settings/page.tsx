@@ -70,6 +70,8 @@ async function ReceiptsTab({ ctx: { shop, readOnly } }: { ctx: ShopContext }) {
       shop={{
         ticketPrefix: shop.ticketPrefix,
         defaultWarrantyDays: shop.defaultWarrantyDays,
+        storageFreeDays: shop.storageFreeDays,
+        storageFeeUsdCents: shop.storageFeeUsdCents,
         lbpRounding: shop.lbpRounding,
         receiptFooter: shop.receiptFooter ?? "",
         receiptFooterAr: shop.receiptFooterAr ?? "",

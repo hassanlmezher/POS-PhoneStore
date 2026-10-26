@@ -114,6 +114,8 @@ model Shop {
   exchangeRate        Int       @default(89500) // LBP per 1 USD
   lbpRounding         Int       @default(1000)
   defaultWarrantyDays Int       @default(30)
+  storageFreeDays     Int       @default(30) // days a ready phone waits free before the storage fee starts
+  storageFeeUsdCents  Int       @default(0) // storage fee per extra day; 0 = no fee
   receiptFooter       String?
   receiptFooterAr     String?
   termsText           String?
@@ -397,6 +399,9 @@ model Ticket {
   createdById      String
   createdAt        DateTime     @default(now())
   /// Secret for the public track link (/track?k=…), so the customer sees progress without typing anything.
+  pickupReminders  Int          @default(0) // pickup reminders sent since it became Ready (day 3, 14, 30)
+  pickupRemindedAt DateTime?
+  storageItemId    String? // the "storage fee" line on this ticket, updated instead of duplicated
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt
 

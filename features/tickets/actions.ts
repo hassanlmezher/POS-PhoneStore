@@ -197,6 +197,8 @@ export async function changeTicketStatus(
         status: to,
         // Warranty starts at pickup; moving back out of Picked up clears it.
         pickedUpAt: to === "PICKED_UP" ? new Date() : from === "PICKED_UP" ? null : undefined,
+        // Each time it becomes Ready the pickup reminders start again from day 3.
+        ...(to === "READY" && { pickupReminders: 0, pickupRemindedAt: null }),
       },
     });
     await tx.ticketStatusLog.create({

@@ -9,6 +9,7 @@ import { Field, fieldAria } from "@/components/field";
 import { Ltr } from "@/components/ltr";
 import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
+import { MoneyInput } from "@/components/money-input";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,8 @@ const PREFIX_RE = /^[A-Za-z]{0,5}-?$/;
 type Values = {
   ticketPrefix: string;
   defaultWarrantyDays: number;
+  storageFreeDays: number;
+  storageFeeUsdCents: number;
   lbpRounding: number;
   receiptFooter: string;
   receiptFooterAr: string;
@@ -43,7 +46,13 @@ export function ReceiptSettingsForm({ shop, rate, nextTicketNumber, latestTicket
   const tc = useTranslations("common");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [v, setV] = useState({ ...shop, defaultWarrantyDays: String(shop.defaultWarrantyDays), lbpRounding: String(shop.lbpRounding) });
+  const [v, setV] = useState({
+    ...shop,
+    defaultWarrantyDays: String(shop.defaultWarrantyDays),
+    lbpRounding: String(shop.lbpRounding),
+    storageFreeDays: String(shop.storageFreeDays),
+    storageFeeUsdCents: shop.storageFeeUsdCents > 0 ? (shop.storageFeeUsdCents / 100).toFixed(2) : "",
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setV((p) => ({ ...p, [k]: e.target.value }));
@@ -123,6 +132,33 @@ export function ReceiptSettingsForm({ shop, rate, nextTicketNumber, latestTicket
                   </option>
                 ))}
               </NativeSelect>
+            </Field>
+          </div>
+        </SectionCard>
+
+        <SectionCard id="storage" title={t("storageTitle")} description={t("storageDescription")}>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label={t("storageFreeDays")} htmlFor="rc-free-days" hint={t("storageFreeDaysHint")} error={errors.storageFreeDays}>
+              <Input
+                {...fieldAria("rc-free-days", errors.storageFreeDays)}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={365}
+                dir="ltr"
+                className="text-start tabular-nums"
+                value={v.storageFreeDays}
+                onChange={set("storageFreeDays")}
+              />
+            </Field>
+            <Field label={t("storageFee")} htmlFor="rc-storage-fee" hint={t("storageFeeHint")} error={errors.storageFeeUsdCents} optional>
+              <MoneyInput
+                {...fieldAria("rc-storage-fee", errors.storageFeeUsdCents)}
+                value={v.storageFeeUsdCents}
+                onValueChange={(val) => setV((p) => ({ ...p, storageFeeUsdCents: val }))}
+                rate={rate}
+                rounding={sampleRounding}
+              />
             </Field>
           </div>
         </SectionCard>

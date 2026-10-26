@@ -136,6 +136,12 @@ export default async function PrintTicketPage({ params, searchParams }: PageProp
         </div>
       </dl>
 
+      {ctx.shop.storageFeeUsdCents > 0 && (
+        <p className={cn("mt-3 border-t border-dashed pt-3 font-semibold", a4 ? "text-xs" : "text-[10px]")}>
+          {t("storageNote", { days: ctx.shop.storageFreeDays, fee: formatMoney(ctx.shop.storageFeeUsdCents, "USD") })}
+        </p>
+      )}
+
       {shop.terms && (
         <div className="mt-3 border-t border-dashed pt-3">
           <p className="font-semibold">{t("terms")}</p>
