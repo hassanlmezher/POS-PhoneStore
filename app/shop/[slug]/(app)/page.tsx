@@ -64,7 +64,7 @@ export default async function DashboardPage({ params }: PageProps<"/shop/[slug]"
               ticket: label,
               balance: `${formatMoney(balance, "USD")} (${formatMoney(toLbp(balance, rate, rounding), "LBP")})`,
               shop: shop.name,
-              trackUrl: trackUrl(shop.slug, label),
+              trackUrl: trackUrl(shop.slug, tk.trackToken),
             }),
           )
         : null,

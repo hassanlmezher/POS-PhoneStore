@@ -10,6 +10,7 @@ import { StatusBadge, type TicketStatus } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lookupTicket, type TrackResult } from "@/features/track/actions";
+import type { TrackTicket } from "@/features/track/queries";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["RECEIVED", "DIAGNOSING", "REPAIRING", "READY", "PICKED_UP"] as const;
@@ -26,9 +27,22 @@ const STEP_OF: Record<TicketStatus, number> = {
   CANT_FIX: -1,
 };
 
-type Props = { defaultTicket: string; rate: number; rounding: number; ticketPrefix: string; countryCode: string };
+type Props = {
+  defaultTicket: string;
+  rate: number;
+  rounding: number;
+  ticketPrefix: string;
+  countryCode: string;
+  /** Opened from the direct link: show the result, no form. */
+  direct?: TrackTicket | null;
+};
 
-export function TrackLookup({ defaultTicket, rate, rounding, ticketPrefix, countryCode }: Props) {
+export function TrackLookup({ direct, ...props }: Props) {
+  if (direct) return <ResultCard ticket={direct} rate={props.rate} rounding={props.rounding} />;
+  return <LookupForm {...props} />;
+}
+
+function LookupForm({ defaultTicket, rate, rounding, ticketPrefix, countryCode }: Omit<Props, "direct">) {
   const t = useTranslations("track");
   const [state, action, pending] = useActionState<TrackResult | undefined, FormData>(lookupTicket, undefined);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -118,7 +132,7 @@ function ResultSkeleton() {
   );
 }
 
-type Ticket = Extract<TrackResult, { ok: true }>["ticket"];
+type Ticket = TrackTicket;
 
 function ResultCard({ ticket, rate, rounding }: { ticket: Ticket; rate: number; rounding: number }) {
   const t = useTranslations("track");
@@ -171,7 +185,36 @@ function ResultCard({ ticket, rate, rounding }: { ticket: Ticket; rate: number; 
           ))}
         </dl>
 
-        {ticket.balanceUsdCents > 0 && (
+        {ticket.paidUsdCents > 0 && ticket.chargeUsdCents > 0 ? (
+          <section aria-labelledby="trk-price" className="flex flex-col gap-3 rounded-lg border p-4">
+            <h3 id="trk-price" className="text-sm font-semibold">
+              {t("priceTitle")}
+            </h3>
+            <dl className="flex flex-col gap-2.5 text-sm">
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">{t("priceTotal")}</dt>
+                <dd><Money usdCents={ticket.chargeUsdCents} rate={rate} rounding={rounding} className="items-end rtl:items-start" /></dd>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">{t("paid")}</dt>
+                <dd><Money usdCents={ticket.paidUsdCents} rate={rate} rounding={rounding} usdClassName="text-success" className="items-end rtl:items-start" /></dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 border-t pt-2.5">
+                <dt className="font-medium">{t("leftToPay")}</dt>
+                <dd>
+                  <Money
+                    usdCents={ticket.balanceUsdCents}
+                    rate={rate}
+                    rounding={rounding}
+                    usdClassName={ticket.balanceUsdCents > 0 ? "text-warning" : undefined}
+                    className="items-end text-base rtl:items-start"
+                  />
+                </dd>
+              </div>
+            </dl>
+            <p className="text-xs text-muted-foreground">{ticket.balanceUsdCents > 0 ? t("balanceHint") : t("paidInFull")}</p>
+          </section>
+        ) : ticket.balanceUsdCents > 0 && (
           <div className="flex items-center justify-between gap-4 rounded-lg border border-warning/20 bg-warning-soft px-4 py-3">
             <div>
               <p className="text-sm font-medium text-warning">{t("balanceDue")}</p>

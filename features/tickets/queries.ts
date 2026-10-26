@@ -43,6 +43,7 @@ export const ticketCardSelect = {
   updatedAt: true,
   estimateUsdCents: true,
   totalUsdCents: true,
+  trackToken: true,
   customer: { select: { id: true, name: true, phone: true, locale: true } },
   deviceModel: { select: { name: true, brand: { select: { name: true } } } },
   assignedTo: { select: { id: true, name: true } },

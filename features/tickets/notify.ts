@@ -7,10 +7,10 @@ import type { ShopContext } from "@/lib/tenant";
 import { fillTemplate, waLink } from "@/lib/whatsapp";
 import type { TicketDetail } from "./queries";
 
-/** Public status page for a ticket (Phase 5). Phone is asked on the page, never put in the URL. */
-export function trackUrl(slug: string, ticketLabel: string): string {
+/** Public status page for a ticket. The random token opens it straight away (no phone to type). */
+export function trackUrl(slug: string, trackToken: string): string {
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-  return `${protocol}://${slug}.${ROOT_DOMAIN}/track?t=${encodeURIComponent(ticketLabel)}`;
+  return `${protocol}://${slug}.${ROOT_DOMAIN}/track?k=${encodeURIComponent(trackToken)}`;
 }
 
 /** Status → the template that fits it best, so the main button sends the right message. */
@@ -41,7 +41,7 @@ export async function ticketWhatsAppLinks(ctx: ShopContext, ticket: TicketDetail
     ticket: label,
     balance: `${formatMoney(balance, "USD")} (${formatMoney(toLbp(balance, ctx.shop.exchangeRate, ctx.shop.lbpRounding), "LBP")})`,
     shop: ctx.shop.name,
-    trackUrl: trackUrl(ctx.shop.slug, label),
+    trackUrl: trackUrl(ctx.shop.slug, ticket.trackToken),
   };
   return templates.map((t) => ({
     key: t.key,

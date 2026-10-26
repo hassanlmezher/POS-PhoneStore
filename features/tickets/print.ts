@@ -8,7 +8,7 @@ import type { TicketDetail } from "./queries";
 /** Everything the intake receipt needs (80mm and A4 share it). */
 export async function ticketPrintData(ctx: ShopContext, ticket: TicketDetail, locale: "en" | "ar") {
   const label = formatTicketNumber(ctx.shop.ticketPrefix, ticket.number);
-  const url = trackUrl(ctx.shop.slug, label);
+  const url = trackUrl(ctx.shop.slug, ticket.trackToken);
   const qrSvg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
   const ar = locale === "ar";
   return {

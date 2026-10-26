@@ -106,14 +106,15 @@ export async function respondApproval(token: string, decision: "APPROVE" | "DECL
     }
     if (status === "APPROVED") {
       const ticket = await tx.ticket.findUniqueOrThrow({ where: { id: approval.ticketId, shopId: shop.id }, select: { status: true } });
-      const moveOn = ticket.status === "RECEIVED" || ticket.status === "DIAGNOSING";
+      // Approved extra work usually needs a new part, so the repair waits for it to be ordered.
+      const moveOn = ticket.status === "RECEIVED" || ticket.status === "DIAGNOSING" || ticket.status === "REPAIRING";
       await tx.ticket.update({
         where: { id: approval.ticketId, shopId: shop.id },
-        data: { estimateUsdCents: approval.amountUsdCents, ...(moveOn && { status: "REPAIRING" }) },
+        data: { estimateUsdCents: approval.amountUsdCents, ...(moveOn && { status: "WAITING_PART" }) },
       });
       if (moveOn) {
         await tx.ticketStatusLog.create({
-          data: { shopId: shop.id, ticketId: approval.ticketId, from: ticket.status, to: "REPAIRING", userId: approval.createdById, note: "@approvedByCustomer" },
+          data: { shopId: shop.id, ticketId: approval.ticketId, from: ticket.status, to: "WAITING_PART", userId: approval.createdById, note: "@approvedByCustomer" },
         });
       }
     }

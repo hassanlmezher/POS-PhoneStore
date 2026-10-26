@@ -6,6 +6,7 @@ import { MapPin, MessageCircle, Phone } from "lucide-react";
 import { LanguageSwitch } from "@/components/app-shell/language-switch";
 import { ShopMark } from "@/components/app-shell/shop-mark";
 import { Button } from "@/components/ui/button";
+import { findTrackTicket } from "@/features/track/queries";
 import { TrackLookup } from "@/features/track/ui/track-lookup";
 import { formatPhone, normalizePhone, waNumber } from "@/lib/phone";
 import { getPlatformSettings } from "@/lib/platform";
@@ -28,6 +29,9 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
 
   const e164 = shop.phone ? normalizePhone(shop.phone, shop.countryCode) : null;
   const ticket = typeof sp.t === "string" ? sp.t.slice(0, 20) : "";
+  // Direct link from WhatsApp / the receipt QR: the random token opens the ticket, no phone needed.
+  const key = typeof sp.k === "string" && /^[a-f0-9]{16,64}$/.test(sp.k) ? sp.k : null;
+  const direct = key ? await findTrackTicket(shop.ticketPrefix, { shopId: shop.id, trackToken: key }) : null;
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -49,7 +53,7 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-6 sm:py-10">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+          <p className="text-sm text-muted-foreground">{t(direct ? "subtitleDirect" : "subtitle")}</p>
         </div>
 
         <TrackLookup
@@ -58,6 +62,7 @@ export default async function TrackPage({ params, searchParams }: PageProps<"/sh
           rounding={shop.lbpRounding}
           ticketPrefix={shop.ticketPrefix}
           countryCode={shop.countryCode}
+          direct={direct}
         />
 
         {(e164 || shop.address) && (

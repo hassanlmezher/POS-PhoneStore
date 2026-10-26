@@ -102,7 +102,7 @@ async function MessagesTab({ ctx: { shop, readOnly } }: { ctx: ShopContext }) {
       sample={{
         shop: shop.name,
         ticket: sampleTicket,
-        trackUrl: trackUrl(shop.slug, sampleTicket),
+        trackUrl: trackUrl(shop.slug, "4f9c2a7e1b"),
         rate: shop.exchangeRate,
         rounding: shop.lbpRounding,
       }}

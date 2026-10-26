@@ -1551,7 +1551,13 @@
     "contactTitle": "Contact the shop",
     "whatsapp": "WhatsApp",
     "call": "Call",
-    "poweredBy": "Powered by {app}"
+    "poweredBy": "Powered by {app}",
+    "subtitleDirect": "Here is the latest on your repair. This page updates as we work.",
+    "priceTitle": "Repair price",
+    "priceTotal": "Total price",
+    "paid": "Already paid",
+    "leftToPay": "Left to pay",
+    "paidInFull": "Paid in full. Nothing left to pay."
   },
   "approval": {
     "title": "Customer approval",

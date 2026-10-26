@@ -396,6 +396,8 @@ model Ticket {
   totalUsdCents    Int          @default(0)
   createdById      String
   createdAt        DateTime     @default(now())
+  /// Secret for the public track link (/track?k=…), so the customer sees progress without typing anything.
+  trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt
 
   shop        Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
