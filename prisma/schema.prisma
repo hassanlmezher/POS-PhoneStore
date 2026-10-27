@@ -160,6 +160,7 @@ model Shop {
   cashSessions         CashSession[]
   cashMovements        CashMovement[]
   expenses             Expense[]
+  repairPrices         RepairPrice[]
   templates            MessageTemplate[]
   exchangeRates        ExchangeRate[]
   subscriptionPayments SubscriptionPayment[]
@@ -380,8 +381,26 @@ model DeviceModel {
   brand     DeviceBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
   tickets   Ticket[]
   products  Product[]   @relation("ProductCompatibility")
+  prices    RepairPrice[]
 
   @@unique([brandId, name])
+}
+
+// Shop price list for repairs ("iPhone 13 · Screen = $120"). No model = the price for any model.
+// One price per (model, service): unique index on (shopId, COALESCE(deviceModelId, ''), lower(service)) in SQL.
+model RepairPrice {
+  id            String       @id @default(cuid())
+  shopId        String
+  deviceModelId String?
+  service       String
+  priceUsdCents Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  shop        Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  deviceModel DeviceModel? @relation(fields: [deviceModelId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, deviceModelId])
 }
 
 // ---------- Repair tickets ----------

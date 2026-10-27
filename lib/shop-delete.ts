@@ -15,6 +15,7 @@ export async function deleteShopData(shopId: string, prisma: PrismaClient = defa
     prisma.priceApproval.deleteMany({ where }),
     prisma.ticket.deleteMany({ where }),
     prisma.expense.deleteMany({ where }),
+    prisma.repairPrice.deleteMany({ where }),
     prisma.cashMovement.deleteMany({ where }),
     prisma.cashSession.deleteMany({ where }),
     prisma.customer.deleteMany({ where }),

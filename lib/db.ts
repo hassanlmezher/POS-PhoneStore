@@ -35,6 +35,7 @@ const TENANT_MODELS = new Set<string>([
   "CashSession",
   "CashMovement",
   "Expense",
+  "RepairPrice",
   "MessageTemplate",
   "ExchangeRate",
   "AuditLog",

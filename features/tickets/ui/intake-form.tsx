@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, CornerDownLeft, KeyRound, Loader2, Plus } from "lucide-react";
+import { Check, CornerDownLeft, KeyRound, Loader2, Plus, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { Field, fieldAria } from "@/components/field";
 import { MoneyInput } from "@/components/money-input";
@@ -15,8 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import type { PriceRow } from "@/features/prices/queries";
 import { createTicket } from "@/features/tickets/actions";
 import { ACCESSORIES, PAYMENT_METHODS, isValidPattern, type TicketInput } from "@/features/tickets/schema";
+import { formatMoney, parseMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { CustomerPicker, type NewCustomer, type PickedCustomer } from "./customer-picker";
 import { DevicePicker, type CatalogBrand, type DeviceValue } from "./device-picker";
@@ -35,7 +37,14 @@ type IntakeFormProps = {
   problems: { id: string; label: string }[];
   /** Show a link to Settings → Quick picks when there are none (owner). */
   canEditProblems: boolean;
+  /** The shop's repair price list (chips for the picked phone). */
+  prices: PriceRow[];
+  /** From a quick quote: the phone and the quoted prices. */
+  initialDevice?: DeviceValue;
+  initialQuote?: PriceRow[];
 };
+
+const centsText = (c: number) => (c / 100).toFixed(2);
 
 function isoDate(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -84,16 +93,17 @@ export function IntakeForm(props: IntakeFormProps) {
 
   const [customer, setCustomer] = useState<PickedCustomer | null>(props.initialCustomer);
   const [newCustomer, setNewCustomer] = useState<NewCustomer>({ name: "", phone: "", locale: props.defaultLocale });
-  const [device, setDevice] = useState<DeviceValue>(null);
+  const [device, setDevice] = useState<DeviceValue>(props.initialDevice ?? null);
   const [imei, setImei] = useState("");
   const [color, setColor] = useState("");
-  const [problem, setProblem] = useState("");
+  const [problem, setProblem] = useState(() => (props.initialQuote ?? []).map((p) => p.service).join(locale === "ar" ? "، " : ", "));
+  const [pickedPrices, setPickedPrices] = useState<string[]>(() => (props.initialQuote ?? []).map((p) => p.id));
   const [lockKind, setLockKind] = useState<"none" | "passcode" | "pattern">("none");
   const [passcode, setPasscode] = useState("");
   const [pattern, setPattern] = useState("");
   const [accessories, setAccessories] = useState<string[]>([]);
   const [condition, setCondition] = useState("");
-  const [estimate, setEstimate] = useState("");
+  const [estimate, setEstimate] = useState(() => (props.initialQuote?.length ? centsText(props.initialQuote.reduce((sum, p) => sum + p.usdCents, 0)) : ""));
   const [deposit, setDeposit] = useState("");
   const [depositCurrency, setDepositCurrency] = useState<"USD" | "LBP">("USD");
   const [depositMethod, setDepositMethod] = useState<(typeof PAYMENT_METHODS)[number]>("CASH");
@@ -110,6 +120,19 @@ export function IntakeForm(props: IntakeFormProps) {
     });
     document.getElementById("intake-problem")?.focus();
   }
+  const modelId = device?.kind === "model" ? device.id : null;
+  const priceChips = props.prices
+    .filter((p) => p.modelId === null || (modelId !== null && p.modelId === modelId))
+    .sort((a, b) => Number(a.modelId === null) - Number(b.modelId === null));
+
+  /** Price list chip: adds the repair to the problem and its price to the estimate. */
+  function addPrice(p: PriceRow) {
+    if (pickedPrices.includes(p.id)) return;
+    setPickedPrices((cur) => [...cur, p.id]);
+    addProblem(p.service);
+    setEstimate((cur) => centsText((parseMoney(cur, "USD") ?? 0) + p.usdCents));
+  }
+
 
   function toggleAccessory(a: string) {
     setAccessories((list) => (list.includes(a) ? list.filter((x) => x !== a) : [...list, a]));
@@ -231,6 +254,36 @@ export function IntakeForm(props: IntakeFormProps) {
         </Section>
 
         <Section title={t("problemSection")}>
+          {priceChips.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Tags aria-hidden className="size-3.5" />
+                {t("fromPriceList")}
+              </span>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t("fromPriceList")}>
+                {priceChips.map((p) => {
+                  const on = pickedPrices.includes(p.id);
+                  return (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      aria-pressed={on}
+                      className={cn("h-11 rounded-full sm:h-9", on && "border-primary bg-primary/10")}
+                      onClick={() => addPrice(p)}
+                    >
+                      {on ? <Check className="text-primary" /> : <Plus />}
+                      <span dir="auto">{p.service}</span>
+                      <span dir="ltr" className="text-muted-foreground tabular-nums">
+                        {formatMoney(p.usdCents, "USD")}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {props.problems.length > 0 ? (
             <div className="flex flex-wrap gap-2" role="group" aria-label={t("quickProblems")}>
               {props.problems.map((p) => (

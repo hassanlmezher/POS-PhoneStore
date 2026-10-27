@@ -39,10 +39,16 @@ type DevicePickerProps = {
   onChange: (v: DeviceValue) => void;
   error?: string;
   autoFocus?: boolean;
+  /** Element id prefix, so two pickers can share a page. */
+  idPrefix?: string;
+  /** Offer the "Other" (free text) entry. Off where only catalog models make sense. */
+  allowOther?: boolean;
+  /** Label above the field (default: "Device"). */
+  label?: string;
 };
 
 /** Single searchable combobox over the device catalog, with an "Other" escape hatch (brand + model text). */
-export function DevicePicker({ catalog, value, onChange, error, autoFocus }: DevicePickerProps) {
+export function DevicePicker({ catalog, value, onChange, error, autoFocus, idPrefix = "intake", allowOther = true, label }: DevicePickerProps) {
   const t = useTranslations("intake");
   const listId = useId();
   const [query, setQuery] = useState("");
@@ -60,7 +66,7 @@ export function DevicePicker({ catalog, value, onChange, error, autoFocus }: Dev
     [catalog],
   );
   const results = useMemo(() => matchDevices(entries, query), [entries, query]);
-  const options = query.trim() ? results.length + 1 : 0; // +1 = "Other"
+  const options = query.trim() ? results.length + (allowOther ? 1 : 0) : 0; // +1 = "Other"
 
   function pick(i: number) {
     if (i < results.length) onChange({ kind: "model", id: results[i].id, label: results[i].label });
@@ -90,8 +96,8 @@ export function DevicePicker({ catalog, value, onChange, error, autoFocus }: Dev
 
   if (value?.kind === "model") {
     return (
-      <Field label={t("device")} htmlFor="intake-device-picked">
-        <div id="intake-device-picked" className="flex h-11 items-center gap-3 rounded-lg border bg-primary-soft/50 ps-3 pe-1">
+      <Field label={label ?? t("device")} htmlFor={`${idPrefix}-device-picked`}>
+        <div id={`${idPrefix}-device-picked`} className="flex h-11 items-center gap-3 rounded-lg border bg-primary-soft/50 ps-3 pe-1">
           <Smartphone className="size-4 text-primary" aria-hidden />
           <span className="min-w-0 flex-1 truncate font-medium">{value.label}</span>
           <Button type="button" variant="ghost" size="icon-sm" aria-label={t("changeDevice")} onClick={() => onChange(null)}>
@@ -138,11 +144,11 @@ export function DevicePicker({ catalog, value, onChange, error, autoFocus }: Dev
   }
 
   return (
-    <Field label={t("device")} htmlFor="intake-device" error={error}>
+    <Field label={label ?? t("device")} htmlFor={`${idPrefix}-device`} error={error}>
       <div className="relative">
         <Smartphone aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
         <Input
-          {...fieldAria("intake-device", error)}
+          {...fieldAria(`${idPrefix}-device`, error)}
           autoFocus={autoFocus}
           role="combobox"
           aria-expanded={open && options > 0}
@@ -181,6 +187,7 @@ export function DevicePicker({ catalog, value, onChange, error, autoFocus }: Dev
                 {i === active && <Check aria-hidden className="ms-auto size-4 text-primary" />}
               </li>
             ))}
+            {allowOther && (
             <li
               id={`${listId}-${results.length}`}
               role="option"
@@ -197,6 +204,7 @@ export function DevicePicker({ catalog, value, onChange, error, autoFocus }: Dev
               <PenLine aria-hidden className="size-4" />
               {t("otherDevice", { q: query.trim() })}
             </li>
+            )}
           </ul>
         )}
       </div>
