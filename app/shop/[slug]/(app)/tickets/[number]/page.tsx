@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { approvalWhatsApp } from "@/features/approvals/link";
 import { ApprovalCard, type ApprovalView } from "@/features/approvals/ui/approval-card";
 import { suggestedTemplate, ticketWhatsAppLinks } from "@/features/tickets/notify";
+import { checkWhatsApp, reviewWhatsApp } from "@/features/followups/message";
+import { FollowupButton } from "@/features/followups/ui/followup-button";
 import { getTicketByNumber, listTechnicians } from "@/features/tickets/queries";
 import { CreatedBanner } from "@/features/tickets/ui/detail/created-banner";
 import { EditDetailsButton } from "@/features/tickets/ui/detail/edit-details-dialog";
@@ -84,6 +86,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
   const canEdit = can(user.role, "tickets.create") && !readOnly;
   const canPos = can(user.role, "pos") && !readOnly;
   const overdue = isOverdue(ticket.promisedAt, ticket.status);
+  // After pickup: thank-you + Google review link, and the "how is your phone?" check.
+  const followup =
+    ticket.status === "PICKED_UP" && ticket.customer.phone
+      ? await (async () => {
+          const [review, check, tf] = await Promise.all([reviewWhatsApp(shop, ticket), checkWhatsApp(shop, ticket), getTranslations("followups")]);
+          return { review, check, tf };
+        })()
+      : null;
   const dt = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeStyle: "short" });
 
   // Latest price approval request (cancelled ones are hidden); pending ones get their WhatsApp link.
@@ -363,6 +373,27 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
               </div>
             )}
           </Card>
+
+          {followup && (
+            <Card title={followup.tf("cardTitle")}>
+              <div className="flex flex-col gap-3 text-sm">
+                {[
+                  { kind: "review" as const, href: followup.review, sentAt: ticket.reviewAskedAt },
+                  { kind: "check" as const, href: followup.check, sentAt: ticket.checkSentAt },
+                ].map(({ kind, href, sentAt }) => (
+                  <div key={kind} className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium">{followup.tf(kind === "review" ? "reviewLabel" : "checkLabel")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {sentAt ? followup.tf("sentOn", { date: dt(sentAt) }) : href ? followup.tf("notSent") : followup.tf("noLinkShort")}
+                      </p>
+                    </div>
+                    {canStatus && href && <FollowupButton ticketId={ticket.id} kind={kind} href={href} sent={!!sentAt} />}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           <Card title={t("technician")}>
             <TechnicianSelect ticketId={ticket.id} value={ticket.assignedTo?.id ?? null} technicians={technicians} disabled={!canStatus} />

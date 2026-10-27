@@ -126,6 +126,8 @@ model Shop {
   defaultWarrantyDays Int       @default(30)
   storageFreeDays     Int       @default(30) // days a ready phone waits free before the storage fee starts
   storageFeeUsdCents  Int       @default(0) // storage fee per extra day; 0 = no fee
+  /// Google review link sent after pickup ("Ask for reviews" link from Google Business Profile).
+  googleReviewUrl     String?
   receiptFooter       String?
   receiptFooterAr     String?
   termsText           String?
@@ -372,15 +374,15 @@ model DeviceBrand {
 }
 
 model DeviceModel {
-  id        String      @id @default(cuid())
+  id        String        @id @default(cuid())
   shopId    String?
   brandId   String
   name      String
-  createdAt DateTime    @default(now())
-  shop      Shop?       @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  brand     DeviceBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  shop      Shop?         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  brand     DeviceBrand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
   tickets   Ticket[]
-  products  Product[]   @relation("ProductCompatibility")
+  products  Product[]     @relation("ProductCompatibility")
   prices    RepairPrice[]
 
   @@unique([brandId, name])
@@ -389,13 +391,13 @@ model DeviceModel {
 // Shop price list for repairs ("iPhone 13 · Screen = $120"). No model = the price for any model.
 // One price per (model, service): unique index on (shopId, COALESCE(deviceModelId, ''), lower(service)) in SQL.
 model RepairPrice {
-  id            String       @id @default(cuid())
+  id            String   @id @default(cuid())
   shopId        String
   deviceModelId String?
   service       String
   priceUsdCents Int
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   shop        Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
   deviceModel DeviceModel? @relation(fields: [deviceModelId], references: [id], onDelete: Cascade)
@@ -433,6 +435,9 @@ model Ticket {
   pickupReminders  Int          @default(0) // pickup reminders sent since it became Ready (day 3, 14, 30)
   pickupRemindedAt DateTime?
   storageItemId    String? // the "storage fee" line on this ticket, updated instead of duplicated
+  /// After pickup: thank-you + review request, and the 3-day check message.
+  reviewAskedAt    DateTime?
+  checkSentAt      DateTime?
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt
 

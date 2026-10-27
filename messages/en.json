@@ -558,7 +558,8 @@
     "invalidCountryCode": "Enter 1 to 4 digits, e.g. 961.",
     "slugMismatch": "That doesn't match the shop's address.",
     "moreThanOwed": "This is more than what is still owed.",
-    "alreadyPaid": "This is already fully paid."
+    "alreadyPaid": "This is already fully paid.",
+    "invalidUrl": "Enter a full link starting with https://"
   },
   "customers": {
     "title": "Customers",
@@ -646,7 +647,8 @@
     "emptyBody": "Create a ticket when a customer drops off a phone. Press N from anywhere.",
     "noResults": "No matching repairs",
     "noResultsBody": "Try another search or clear the filters.",
-    "waitingPickup": "Waiting for pickup"
+    "waitingPickup": "Waiting for pickup",
+    "afterPickup": "After pickup"
   },
   "intake": {
     "title": "New repair",
@@ -1358,7 +1360,9 @@
       "timezoneAll": "All time zones",
       "countryCode": "Country calling code",
       "countryCodeHint": "Phone numbers typed without + get this code, and your country's numbers show in local format.",
-      "countryCodePicks": "Common calling codes"
+      "countryCodePicks": "Common calling codes",
+      "reviewUrl": "Google review link",
+      "reviewUrlHint": "Sent to customers after pickup. Find it in your Google Business Profile → \"Ask for reviews\" → copy link."
     },
     "logo": {
       "title": "Logo",
@@ -1776,5 +1780,33 @@
     "willChange": "{count, plural, =0 {No price will change} one {# price will change} other {# prices will change}}",
     "applyChange": "Change prices",
     "adjusted": "{count, plural, one {# price changed} other {# prices changed}}"
+  },
+  "followups": {
+    "title": "After pickup",
+    "subtitle": "Thank happy customers, ask for a Google review, and check on the phone 3 days later.",
+    "tabReview": "Ask for a review ({count})",
+    "tabCheck": "3-day check ({count})",
+    "reviewHint": "Phones picked up in the last 30 days. One tap sends a thank-you with your Google review link.",
+    "checkHint": "Phones picked up 3 or more days ago. One tap asks the customer how the phone is working.",
+    "pickedUpAgo": "{count, plural, =0 {picked up today} one {picked up yesterday} other {picked up # days ago}}",
+    "sendReview": "Send thank-you",
+    "sendCheck": "Send check message",
+    "sendAgain": "Send again",
+    "allDone": "All done",
+    "allDoneReview": "Every recent customer got a thank-you.",
+    "allDoneCheck": "No check messages due right now.",
+    "noLinkOwner": "Add your Google review link first, then the thank-you buttons appear.",
+    "addLink": "Add the link",
+    "noLinkStaff": "The owner hasn't added the shop's Google review link yet.",
+    "linkSettings": "Review link",
+    "cardTitle": "After pickup",
+    "reviewLabel": "Thank-you + Google review",
+    "checkLabel": "3-day check",
+    "sentOn": "Sent {date}",
+    "notSent": "Not sent yet",
+    "noLinkShort": "Add the review link in Settings",
+    "waReview": "Hello {customer}, thank you for choosing {shop}! 🙏\nWe hope your {device} works perfectly.\nIf you're happy with our service, a quick Google review would help us a lot:\n{link}",
+    "waCheck": "Hello {customer}, this is {shop}.\nJust checking in: how is your {device} working since the repair?\nIf anything isn't right, reply here and we'll take care of it.{warranty}",
+    "waWarranty": "Your repair warranty is valid until {date}."
   }
 }

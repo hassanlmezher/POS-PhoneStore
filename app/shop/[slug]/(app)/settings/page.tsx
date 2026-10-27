@@ -54,6 +54,7 @@ function ShopTab({ ctx: { shop, readOnly } }: { ctx: ShopContext }) {
         logoUrl: shop.logoUrl,
         timezone: shop.timezone,
         countryCode: shop.countryCode,
+        googleReviewUrl: shop.googleReviewUrl,
       }}
     />
   );
