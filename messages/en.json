@@ -556,7 +556,9 @@
     "patternTooShort": "Connect at least 4 dots.",
     "invalidTimezone": "Pick a time zone from the list.",
     "invalidCountryCode": "Enter 1 to 4 digits, e.g. 961.",
-    "slugMismatch": "That doesn't match the shop's address."
+    "slugMismatch": "That doesn't match the shop's address.",
+    "moreThanOwed": "This is more than what is still owed.",
+    "alreadyPaid": "This is already fully paid."
   },
   "customers": {
     "title": "Customers",
@@ -594,7 +596,20 @@
     "noPurchasesBody": "Sales to this customer will appear here.",
     "itemsCount": "{count, plural, one {# item} other {# items}}",
     "voided": "Voided",
-    "saleBalance": "Owes"
+    "saleBalance": "Owes",
+    "recordPayment": "Record payment",
+    "payTitle": "Payment for {label}",
+    "payHint": "Still to pay: <m>{amount}</m>. The full amount is filled in; change it if the customer pays only part.",
+    "amountPaid": "Amount paid",
+    "currency": "Currency",
+    "payAll": "Fill the full amount",
+    "method": "Paid with",
+    "reference": "Reference",
+    "savePayment": "Save payment",
+    "paymentSaved": "Payment saved",
+    "stillToPay": "Still to pay",
+    "stillToPayHint": "When the customer pays, press Record payment. It is marked paid once nothing is left.",
+    "saleLabel": "Sale #{number}"
   },
   "tickets": {
     "title": "Repairs",

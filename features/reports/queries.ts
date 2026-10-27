@@ -49,8 +49,9 @@ export async function salesByDay(shopId: string, range: DayRange): Promise<DayRo
         SUM(GREATEST(net - discount, 0)) AS revenue,
         SUM(cost) AS cost
       FROM s GROUP BY 1`,
-    // Deposits on tickets (no sale) + each sale's net received (payments − change). A ±1 cent
+    // Deposits on tickets (no sale) + each sale's net received on its own day (payments − change). A ±1 cent
     // gap between a sale's net and its total is LBP→cents rounding, so the total is used.
+    // Money paid later for an unpaid sale counts on the day it was paid.
     prisma.$queryRaw<{ day: string; received: bigint; deposits: bigint }[]>`
       SELECT ${localDay(Prisma.sql`p."createdAt"`, range.tz)} AS day,
         SUM(p."usdCentsEquivalent") AS received,
@@ -63,11 +64,19 @@ export async function salesByDay(shopId: string, range: DayRange): Promise<DayRo
       SELECT x.day, SUM(CASE WHEN ABS(x.net - x.total) <= 1 THEN x.total ELSE x.net END), 0
       FROM (
         SELECT ${localDay(Prisma.sql`s."createdAt"`, range.tz)} AS day, s."totalUsdCents" AS total,
-          (SELECT COALESCE(SUM(p."usdCentsEquivalent"), 0) FROM "Payment" p WHERE p."saleId" = s.id) - ${saleChangeUsd} AS net
+          (SELECT COALESCE(SUM(p."usdCentsEquivalent"), 0) FROM "Payment" p WHERE p."saleId" = s.id
+             AND ${localDay(Prisma.sql`p."createdAt"`, range.tz)} = ${localDay(Prisma.sql`s."createdAt"`, range.tz)}) - ${saleChangeUsd} AS net
         FROM "Sale" s
         WHERE s."shopId" = ${shopId} AND s.status = 'COMPLETED'
           AND s."createdAt" >= ${range.start} AND s."createdAt" < ${range.end}
       ) x
+      GROUP BY 1
+      UNION ALL
+      SELECT ${localDay(Prisma.sql`p."createdAt"`, range.tz)} AS day, SUM(p."usdCentsEquivalent"), 0
+      FROM "Payment" p JOIN "Sale" s ON s.id = p."saleId"
+      WHERE p."shopId" = ${shopId} AND s.status = 'COMPLETED'
+        AND p."createdAt" >= ${range.start} AND p."createdAt" < ${range.end}
+        AND ${localDay(Prisma.sql`p."createdAt"`, range.tz)} <> ${localDay(Prisma.sql`s."createdAt"`, range.tz)}
       GROUP BY 1`,
     prisma.$queryRaw<{ day: string; amount: bigint }[]>`
       SELECT ${localDay(Prisma.sql`s."createdAt"`, range.tz)} AS day,

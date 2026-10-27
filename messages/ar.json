@@ -556,7 +556,9 @@
     "patternTooShort": "صِل 4 نقاط على الأقل.",
     "invalidTimezone": "اختر منطقة زمنية من القائمة.",
     "invalidCountryCode": "أدخل من رقم إلى 4 أرقام، مثلاً 961.",
-    "slugMismatch": "هذا لا يطابق عنوان المحل."
+    "slugMismatch": "هذا لا يطابق عنوان المحل.",
+    "moreThanOwed": "هذا أكثر من المبلغ المتبقي.",
+    "alreadyPaid": "هذا مدفوع بالكامل مسبقاً."
   },
   "customers": {
     "title": "الزبائن",
@@ -594,7 +596,20 @@
     "noPurchasesBody": "ستظهر هنا المبيعات لهذا الزبون.",
     "itemsCount": "{count, plural, one {قطعة واحدة} two {قطعتان} few {# قطع} many {# قطعة} other {# قطعة}}",
     "voided": "ملغاة",
-    "saleBalance": "متبقٍ"
+    "saleBalance": "متبقٍ",
+    "recordPayment": "تسجيل دفعة",
+    "payTitle": "دفعة لـ {label}",
+    "payHint": "المتبقي: <m>{amount}</m>. المبلغ الكامل معبّأ؛ غيّره إذا دفع الزبون جزءاً فقط.",
+    "amountPaid": "المبلغ المدفوع",
+    "currency": "العملة",
+    "payAll": "عبّئ المبلغ الكامل",
+    "method": "طريقة الدفع",
+    "reference": "المرجع",
+    "savePayment": "احفظ الدفعة",
+    "paymentSaved": "تم حفظ الدفعة",
+    "stillToPay": "باقي للدفع",
+    "stillToPayHint": "عندما يدفع الزبون، اضغط تسجيل دفعة. يُعتبر مدفوعاً بالكامل عندما لا يبقى شيء.",
+    "saleLabel": "بيع رقم {number}"
   },
   "tickets": {
     "title": "التصليحات",

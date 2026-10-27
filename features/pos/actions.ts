@@ -2,14 +2,15 @@
 
 import { prisma } from "@/lib/db";
 import { lockRows } from "@/lib/locks";
-import { toUsdCents } from "@/lib/money";
+import { lbpToUsdCents, toUsdCents } from "@/lib/money";
 import { formatTicketNumber, nextSaleNumber, parseTicketNumber } from "@/lib/numbering";
 import { phoneSearchDigits } from "@/lib/phone";
 import { moveStock } from "@/lib/stock";
 import { refreshShop, requireActionShop } from "@/lib/tenant";
 import { ticketBalance } from "@/features/tickets/money";
 import { deviceName } from "@/features/tickets/queries";
-import { changeDue, tenderedUsdCents } from "./money";
+import { paymentInput, type PaymentInput } from "@/features/tickets/schema";
+import { changeDue, saleBalance, tenderedUsdCents } from "./money";
 import { checkoutInput, type CheckoutInput } from "./schema";
 
 export type CheckoutResult =
@@ -223,6 +224,52 @@ export async function voidSale(saleId: string, reason: string): Promise<{ ok: bo
   if (!voided) return { ok: false, error: "alreadyVoided" };
   refreshShop();
   return { ok: true };
+}
+
+/**
+ * Money received later for a sale left unpaid (customer pays what they owe). Recorded, not processed;
+ * cash goes to the open drawer. Never more than the balance (LBP may round up by one rounding step).
+ */
+export async function addSalePayment(saleId: string, input: PaymentInput): Promise<{ ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string> }> {
+  const ctx = await requireActionShop("pos");
+  const parsed = paymentInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid", fieldErrors: Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])) };
+  }
+  if (typeof saleId !== "string" || !saleId || saleId.length > 64) return { ok: false, error: "invalid" };
+  const p = parsed.data;
+  const { shop } = ctx;
+  return prisma.$transaction(async (tx) => {
+    await lockRows(tx, "Sale", shop.id, [saleId]);
+    const sale = await tx.sale.findFirst({
+      where: { id: saleId, shopId: shop.id },
+      select: { status: true, totalUsdCents: true, changeAmount: true, changeCurrency: true, payments: { select: { usdCentsEquivalent: true, rate: true } } },
+    });
+    if (!sale) return { ok: false as const, error: "notFound" };
+    if (sale.status !== "COMPLETED") return { ok: false as const, error: "invalid" };
+    const balance = saleBalance(sale);
+    if (balance <= 0) return { ok: false as const, error: "alreadyPaid" };
+    const usd = toUsdCents(p.amount, p.currency, shop.exchangeRate);
+    const slack = p.currency === "LBP" ? lbpToUsdCents(shop.lbpRounding, shop.exchangeRate) + 1 : 0;
+    if (usd > balance + slack) return { ok: false as const, error: "moreThanOwed", fieldErrors: { amount: "moreThanOwed" } };
+    const cash = p.method === "CASH" ? await tx.cashSession.findFirst({ where: { shopId: shop.id, closedAt: null }, select: { id: true } }) : null;
+    await tx.payment.create({
+      data: {
+        shopId: shop.id,
+        saleId,
+        method: p.method,
+        currency: p.currency,
+        amount: p.amount,
+        rate: shop.exchangeRate,
+        usdCentsEquivalent: Math.min(usd, balance),
+        reference: p.reference,
+        cashSessionId: cash?.id ?? null,
+        userId: ctx.user.id,
+      },
+    });
+    refreshShop();
+    return { ok: true as const };
+  });
 }
 
 /**

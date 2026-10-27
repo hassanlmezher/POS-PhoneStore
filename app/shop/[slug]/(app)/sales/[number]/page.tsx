@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getSaleByNumber } from "@/features/pos/queries";
 import { VoidSaleButton } from "@/features/pos/ui/void-sale-button";
+import { PayBalanceButton } from "@/features/customers/ui/pay-balance-button";
 import { formatMoney, toLbp } from "@/lib/money";
 import { formatTicketNumber } from "@/lib/numbering";
 import { can } from "@/lib/permissions";
@@ -294,13 +295,18 @@ export default async function SalePage({
                 <div className="flex items-start justify-between gap-3 border-t pt-3">
                   <span className="font-medium">{t("balance")}</span>
                   {sale.balanceUsdCents > 0 ? (
-                    <Money
-                      usdCents={sale.balanceUsdCents}
-                      rate={rate}
-                      rounding={rounding}
-                      className="items-end rtl:items-start"
-                      usdClassName="text-warning"
-                    />
+                    <div className="flex flex-col items-end gap-2 rtl:items-start">
+                      <Money
+                        usdCents={sale.balanceUsdCents}
+                        rate={rate}
+                        rounding={rounding}
+                        className="items-end rtl:items-start"
+                        usdClassName="text-warning"
+                      />
+                      {!readOnly && (
+                        <PayBalanceButton kind="sale" id={sale.id} label={`#${sale.number}`} balanceUsdCents={sale.balanceUsdCents} rate={rate} rounding={rounding} />
+                      )}
+                    </div>
                   ) : (
                     <span className="text-sm font-medium text-success">
                       {t("paidInFull")}

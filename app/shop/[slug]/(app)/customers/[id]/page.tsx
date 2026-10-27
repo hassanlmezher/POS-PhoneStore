@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCustomer } from "@/features/customers/queries";
 import { CustomerDialogButton } from "@/features/customers/ui/customer-dialog";
+import { PayBalanceButton } from "@/features/customers/ui/pay-balance-button";
 import { warrantyUntil } from "@/features/tickets/money";
 import { deviceName } from "@/features/tickets/queries";
 import { WarrantyBadge } from "@/features/tickets/ui/warranty-badge";
@@ -31,6 +32,35 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
   const canCreate = can(user.role, "tickets.create") && !readOnly;
   const canEdit = can(user.role, "customers.edit") && !readOnly;
   const rate = shop.exchangeRate;
+  const canPaySale = can(user.role, "pos") && !readOnly;
+  const canPayTicket = can(user.role, "tickets.create") && !readOnly;
+  // Everything still to pay: repairs (handed over or not) and unpaid sales, oldest first.
+  const unpaid = [
+    ...customer.tickets
+      .filter((tk) => tk.status !== "CANCELLED" && tk.balanceUsdCents > 0)
+      .map((tk) => ({
+        kind: "ticket" as const,
+        id: tk.id,
+        label: formatTicketNumber(shop.ticketPrefix, tk.number),
+        href: `/tickets/${tk.number}`,
+        detail: deviceName(tk),
+        status: tk.status,
+        date: tk.createdAt,
+        balance: tk.balanceUsdCents,
+      })),
+    ...customer.sales
+      .filter((s) => s.balanceUsdCents > 0)
+      .map((s) => ({
+        kind: "sale" as const,
+        id: s.id,
+        label: t("saleLabel", { number: s.number }),
+        href: `/sales/${s.number}`,
+        detail: t("itemsCount", { count: s._count.items }),
+        status: null,
+        date: s.createdAt,
+        balance: s.balanceUsdCents,
+      })),
+  ].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,6 +126,44 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
           <Money usdCents={customer.dueOnPickupUsdCents} rate={rate} rounding={shop.lbpRounding} lbpClassName="text-sm" />
         </StatTile>
       </section>
+
+      {unpaid.length > 0 && (
+        <section className="overflow-hidden rounded-xl border border-warning/40 bg-card shadow-card" aria-labelledby="unpaid-h">
+          <div className="border-b px-4 py-4 sm:px-6">
+            <h2 id="unpaid-h" className="font-semibold">
+              {t("stillToPay")}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t("stillToPayHint")}</p>
+          </div>
+          <ul className="divide-y">
+            {unpaid.map((u) => {
+              const canPay = u.kind === "sale" ? canPaySale : canPayTicket;
+              return (
+                <li key={u.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      {u.kind === "sale" ? <ShoppingBag aria-hidden className="size-4" /> : <Wrench aria-hidden className="size-4" />}
+                    </span>
+                    <div className="min-w-0">
+                      <Link href={u.href} className="font-semibold hover:underline">
+                        <Ltr>{u.label}</Ltr>
+                      </Link>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {u.detail} · {format.dateTime(u.date, { dateStyle: "medium" })}
+                      </p>
+                    </div>
+                    {u.status && <StatusBadge status={u.status} />}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 sm:justify-end">
+                    <Money usdCents={u.balance} rate={rate} rounding={shop.lbpRounding} layout="inline" className="text-sm whitespace-nowrap" usdClassName="font-semibold text-warning" />
+                    {canPay && <PayBalanceButton kind={u.kind} id={u.id} label={u.label} balanceUsdCents={u.balance} rate={rate} rounding={shop.lbpRounding} />}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="overflow-hidden rounded-xl border bg-card shadow-card" aria-labelledby="repairs-h">
         <div className="border-b px-4 py-4 sm:px-6">
