@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CircleCheck, MessageCircle, Printer, X } from "lucide-react";
+import { Camera, CircleCheck, MessageCircle, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Shown once after intake: print the receipt and send the "received" message. */
@@ -29,6 +29,12 @@ export function CreatedBanner({ number, label, receivedUrl }: { number: number; 
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" asChild>
+          <a href="#checkin">
+            <Camera />
+            {t("photosAndSignature")}
+          </a>
+        </Button>
         <Button variant="outline" asChild>
           <a href={`/print/ticket/${number}?size=80mm`} target="_blank" rel="noopener">
             <Printer />

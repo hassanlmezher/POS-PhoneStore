@@ -558,7 +558,8 @@
     "invalidCountryCode": "أدخل من رقم إلى 4 أرقام، مثلاً 961.",
     "slugMismatch": "هذا لا يطابق عنوان المحل.",
     "moreThanOwed": "هذا أكثر من المبلغ المتبقي.",
-    "alreadyPaid": "هذا مدفوع بالكامل مسبقاً."
+    "alreadyPaid": "هذا مدفوع بالكامل مسبقاً.",
+    "tooMany": "ملفات كثيرة."
   },
   "customers": {
     "title": "الزبائن",
@@ -860,7 +861,8 @@
     "removeLock": "حذف القفل",
     "removeLockTitle": "حذف قفل الشاشة المحفوظ؟",
     "removeLockBody": "سيتم حذف الرمز أو النمط من هذه التذكرة. يتم تسجيل ذلك.",
-    "lockRemoved": "تم حذف قفل الشاشة"
+    "lockRemoved": "تم حذف قفل الشاشة",
+    "photosAndSignature": "الصور والتوقيع"
   },
   "print": {
     "printButton": "طباعة",
@@ -1822,5 +1824,53 @@
     "noParts": "لم تحتوِ التصليحات الأولى على قطع من المخزون.",
     "techLine": "{count, plural, one {رجوع واحد} two {رجوعان} few {# رجوع} many {# رجوعاً} other {# رجوع}}",
     "ofRepairs": "{rate} من {repairs}"
+  },
+  "checkin": {
+    "title": "صور الاستلام والتوقيع",
+    "hint": "إثبات حالة الهاتف عند استلامه: صور، فحص سريع، وتوقيع الزبون.",
+    "photos": "الصور ({count}/{max})",
+    "addPhotos": "التقط صوراً",
+    "uploading": "جارٍ الرفع {done}/{total}…",
+    "noPhotos": "لا صور بعد. التقط بعضها: الأمام، الخلف، وأي خدش أو كسر.",
+    "photosAdded": "{count, plural, one {أُضيفت صورة} two {أُضيفت صورتان} few {أُضيفت # صور} many {أُضيفت # صورة} other {أُضيفت # صورة}}",
+    "uploadFailed": "{count, plural, one {تعذّر رفع صورة} two {تعذّر رفع صورتين} few {تعذّر رفع # صور} many {تعذّر رفع # صورة} other {تعذّر رفع # صورة}}. حاول مجدداً.",
+    "tooMany": "حتى {max} صور لكل تصليح.",
+    "openPhoto": "افتح الصورة {n}",
+    "photo": "صورة",
+    "deletePhoto": "حذف الصورة",
+    "deleteTitle": "حذف هذه الصورة؟",
+    "deleteBody": "ستُزال من هذا التصليح.",
+    "checklist": "فحص الحالة",
+    "issues": "{count, plural, one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلة} other {# مشكلة}}",
+    "restOk": "الباقي يعمل",
+    "items": {
+      "SCREEN": "الشاشة (بدون كسر)",
+      "TOUCH": "اللمس",
+      "CAMERAS": "الكاميرات",
+      "BUTTONS": "الأزرار",
+      "FACE_ID": "Face ID / البصمة",
+      "CHARGING": "الشحن",
+      "SOUND": "السمّاعة والميكروفون",
+      "SIGNAL": "Wi-Fi وشريحة الخط"
+    },
+    "values": {
+      "ok": "يعمل",
+      "issue": "مشكلة",
+      "na": "لا يمكن فحصه"
+    },
+    "signature": "توقيع الزبون",
+    "sign": "توقيع الزبون",
+    "signAgain": "وقّع مجدداً",
+    "notSigned": "لم يوقّع بعد. أعطِ الشاشة للزبون.",
+    "signatureAlt": "توقيع الزبون",
+    "signedOn": "وُقّع {date}",
+    "signTitle": "توقيع الزبون",
+    "signText": "أؤكد حالة الهاتف الظاهرة هنا وأوافق على شروط التصليح في المحل.",
+    "signHere": "وقّع هنا بإصبعك",
+    "clear": "مسح",
+    "saveSignature": "احفظ التوقيع",
+    "signed": "تم حفظ التوقيع",
+    "printTitle": "الحالة عند الاستلام",
+    "printLegend": "✓ يعمل · ✗ مشكلة · – لا يمكن فحصه"
   }
 }

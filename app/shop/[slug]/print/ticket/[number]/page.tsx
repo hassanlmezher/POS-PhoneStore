@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { AutoPrint } from "@/components/auto-print";
+import { CHECKLIST_ITEMS, readChecklist } from "@/features/checkin/rules";
 import { getTicketByNumber } from "@/features/tickets/queries";
 import { ticketPrintData } from "@/features/tickets/print";
 import { dirOf, isLocale, type AppLocale } from "@/i18n/config";
@@ -21,12 +22,17 @@ export default async function PrintTicketPage({ params, searchParams }: PageProp
 
   const locale: AppLocale = isLocale(sp.lang) ? sp.lang : ((await getLocale()) as AppLocale);
   const a4 = sp.size === "a4";
-  const [data, t, ta, format] = await Promise.all([
+  const [data, t, ta, tci, format, signature] = await Promise.all([
     ticketPrintData(ctx, ticket, locale),
     getTranslations({ locale, namespace: "print" }),
     getTranslations({ locale, namespace: "accessories" }),
+    getTranslations({ locale, namespace: "checkin" }),
     getFormatter({ locale }),
+    ctx.db.ticketMedia.findFirst({ where: { ticketId: ticket.id, kind: "SIGNATURE" }, orderBy: { createdAt: "desc" }, select: { id: true } }),
   ]);
+  const checklist = readChecklist(ticket.checklist);
+  const checked = CHECKLIST_ITEMS.filter((k) => checklist[k]);
+  const mark = { ok: "✓", issue: "✗", na: "–" } as const;
   const { shop } = data;
   const money = (usdCents: number) => (
     <span dir="ltr" className="tabular-nums">
@@ -136,6 +142,21 @@ export default async function PrintTicketPage({ params, searchParams }: PageProp
         </div>
       </dl>
 
+      {checked.length > 0 && (
+        <div className="mt-3 border-t border-dashed pt-3">
+          <p className="font-semibold">{tci("printTitle")}</p>
+          <ul className={cn("mt-1 grid gap-x-4", a4 ? "grid-cols-2 text-xs" : "grid-cols-2 text-[10px]")}>
+            {checked.map((k) => (
+              <li key={k} className="flex justify-between gap-2">
+                <span>{tci(`items.${k}`)}</span>
+                <span className="font-semibold">{mark[checklist[k]!]}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={cn("mt-1", a4 ? "text-[10px]" : "text-[9px]")}>{tci("printLegend")}</p>
+        </div>
+      )}
+
       {ctx.shop.storageFeeUsdCents > 0 && (
         <p className={cn("mt-3 border-t border-dashed pt-3 font-semibold", a4 ? "text-xs" : "text-[10px]")}>
           {t("storageNote", { days: ctx.shop.storageFreeDays, fee: formatMoney(ctx.shop.storageFeeUsdCents, "USD") })}
@@ -151,7 +172,12 @@ export default async function PrintTicketPage({ params, searchParams }: PageProp
 
       <div className={cn("mt-8 grid grid-cols-1 gap-6", a4 && "grid-cols-2")}>
         <div>
-          <div className="h-10 border-b" />
+          {signature ? (
+            // eslint-disable-next-line @next/next/no-img-element -- private, auth-checked file route
+            <img src={`/files/ticket-media/${signature.id}`} alt="" className="mx-auto h-14 border-b object-contain" />
+          ) : (
+            <div className="h-10 border-b" />
+          )}
           <p className="mt-1 text-center text-[10px]">{t("customerSignature")}</p>
         </div>
         {a4 && (

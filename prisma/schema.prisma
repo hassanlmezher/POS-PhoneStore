@@ -93,6 +93,11 @@ enum CashMovementType {
   PAY_OUT
 }
 
+enum TicketMediaKind {
+  PHOTO
+  SIGNATURE
+}
+
 enum ExpenseCategory {
   RENT
   GENERATOR
@@ -161,6 +166,7 @@ model Shop {
   cashMovements        CashMovement[]
   expenses             Expense[]
   repairPrices         RepairPrice[]
+  ticketMedia          TicketMedia[]
   templates            MessageTemplate[]
   exchangeRates        ExchangeRate[]
   subscriptionPayments SubscriptionPayment[]
@@ -283,6 +289,7 @@ model User {
   closedSessions   CashSession[]     @relation("closedBy")
   cashMovements    CashMovement[]
   expenses         Expense[]
+  ticketMedia      TicketMedia[]
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -435,6 +442,8 @@ model Ticket {
   storageItemId    String? // the "storage fee" line on this ticket, updated instead of duplicated
   /// After pickup: when the 3-day "how is your phone?" message was sent.
   checkSentAt      DateTime?
+  /// Check-in checklist: { SCREEN: "ok" | "issue" | "na", … } (features/checkin/rules.ts).
+  checklist        Json?
   /// Set on a warranty comeback: the original repair this phone came back from (repaired free).
   comebackOfId     String?
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
@@ -446,6 +455,7 @@ model Ticket {
   assignedTo  User?             @relation("assignedTo", fields: [assignedToId], references: [id])
   comebackOf  Ticket?           @relation("comeback", fields: [comebackOfId], references: [id], onDelete: SetNull)
   comebacks   Ticket[]          @relation("comeback")
+  media       TicketMedia[]
   createdBy   User              @relation("createdBy", fields: [createdById], references: [id])
   items       TicketItem[]
   statusLogs  TicketStatusLog[]
@@ -739,6 +749,25 @@ model Expense {
   cashMovement CashMovement? @relation(fields: [cashMovementId], references: [id], onDelete: SetNull)
 
   @@index([shopId, spentAt])
+}
+
+// Check-in photos and the customer's signature, stored in the database (like ShopLogo) so no disk or
+// outside storage is needed. Photos are shrunk on the device before upload (≈200–400 KB).
+model TicketMedia {
+  id        String          @id @default(cuid())
+  shopId    String
+  ticketId  String
+  kind      TicketMediaKind
+  mime      String
+  data      Bytes
+  userId    String
+  createdAt DateTime        @default(now())
+
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([shopId, ticketId])
 }
 
 // ---------- Messaging ----------

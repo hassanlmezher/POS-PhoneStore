@@ -36,6 +36,7 @@ async function main() {
         prisma.cashSession.updateMany({ where: { closedById: { in: ids } }, data: { closedById: to } }),
         prisma.cashMovement.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
         prisma.expense.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
+        prisma.ticketMedia.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
         prisma.exchangeRate.updateMany({ where: { setById: { in: ids } }, data: { setById: to } }),
         prisma.auditLog.updateMany({ where: { userId: { in: ids } }, data: { userId: to } }),
         prisma.user.deleteMany({ where: { id: { in: ids } } }),

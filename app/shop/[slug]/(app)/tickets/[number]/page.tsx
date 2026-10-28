@@ -12,6 +12,8 @@ import { ApprovalCard, type ApprovalView } from "@/features/approvals/ui/approva
 import { suggestedTemplate, ticketWhatsAppLinks } from "@/features/tickets/notify";
 import { checkWhatsApp } from "@/features/followups/message";
 import { FollowupButton } from "@/features/followups/ui/followup-button";
+import { readChecklist } from "@/features/checkin/rules";
+import { CheckinCard } from "@/features/checkin/ui/checkin-card";
 import { ComebackDialog } from "@/features/comebacks/ui/comeback-dialog";
 import { getTicketByNumber, listTechnicians } from "@/features/tickets/queries";
 import { CreatedBanner } from "@/features/tickets/ui/detail/created-banner";
@@ -88,6 +90,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
   const canPos = can(user.role, "pos") && !readOnly;
   const overdue = isOverdue(ticket.promisedAt, ticket.status);
   const tcb = await getTranslations("comebacks");
+  // Check-in photos + signature (no bytes here; images load from the private file route).
+  const media = await ctx.db.ticketMedia.findMany({
+    where: { ticketId: ticket.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, kind: true, createdAt: true },
+  });
+  const mediaUrl = (id: string) => `/files/ticket-media/${id}`;
+  const signatureMedia = media.findLast((m) => m.kind === "SIGNATURE");
   // After pickup: the "how is your phone?" check message.
   const followup =
     ticket.status === "PICKED_UP" && ticket.customer.phone
@@ -244,6 +254,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
           <Card title={t("problem")}>
             <p className="text-sm leading-relaxed whitespace-pre-line">{ticket.problem}</p>
           </Card>
+
+          <CheckinCard
+            ticketId={ticket.id}
+            photos={media.filter((m) => m.kind === "PHOTO").map((m) => ({ id: m.id, url: mediaUrl(m.id) }))}
+            signature={signatureMedia ? { id: signatureMedia.id, url: mediaUrl(signatureMedia.id), at: signatureMedia.createdAt.toISOString() } : null}
+            checklist={readChecklist(ticket.checklist)}
+            canEdit={canEdit}
+          />
 
           <ItemsCard
             ticketId={ticket.id}

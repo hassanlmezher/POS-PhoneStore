@@ -23,6 +23,12 @@ function sniff(buf: Buffer): Ext | null {
   return null;
 }
 
+/** MIME of a PNG/JPEG/WEBP image detected from its bytes, or null. */
+export function imageMime(buf: Buffer): string | null {
+  const ext = sniff(buf);
+  return ext ? TYPES[ext].mime : null;
+}
+
 export type SaveLogoResult = { ok: true; version: number } | { ok: false; error: "tooLarge" | "badType" };
 
 /** Validates and stores the logo; `version` busts caches in the logo URL. */

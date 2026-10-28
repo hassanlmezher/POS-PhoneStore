@@ -558,7 +558,8 @@
     "invalidCountryCode": "Enter 1 to 4 digits, e.g. 961.",
     "slugMismatch": "That doesn't match the shop's address.",
     "moreThanOwed": "This is more than what is still owed.",
-    "alreadyPaid": "This is already fully paid."
+    "alreadyPaid": "This is already fully paid.",
+    "tooMany": "Too many files."
   },
   "customers": {
     "title": "Customers",
@@ -860,7 +861,8 @@
     "removeLock": "Remove lock",
     "removeLockTitle": "Remove the saved screen lock?",
     "removeLockBody": "The passcode or pattern will be deleted from this ticket. This is logged.",
-    "lockRemoved": "Screen lock removed"
+    "lockRemoved": "Screen lock removed",
+    "photosAndSignature": "Photos & signature"
   },
   "print": {
     "printButton": "Print",
@@ -1822,5 +1824,53 @@
     "noParts": "The first repairs had no parts from stock.",
     "techLine": "{count, plural, one {# comeback} other {# comebacks}}",
     "ofRepairs": "{rate} of {repairs}"
+  },
+  "checkin": {
+    "title": "Check-in photos & signature",
+    "hint": "Proof of the phone's condition when it came in: photos, a quick check, and the customer's signature.",
+    "photos": "Photos ({count}/{max})",
+    "addPhotos": "Take photos",
+    "uploading": "Uploading {done}/{total}…",
+    "noPhotos": "No photos yet. Take a few: front, back, and any scratch or crack.",
+    "photosAdded": "{count, plural, one {Photo added} other {# photos added}}",
+    "uploadFailed": "{count, plural, one {A photo couldn't be uploaded} other {# photos couldn't be uploaded}}. Try again.",
+    "tooMany": "Up to {max} photos per repair.",
+    "openPhoto": "Open photo {n}",
+    "photo": "Photo",
+    "deletePhoto": "Delete photo",
+    "deleteTitle": "Delete this photo?",
+    "deleteBody": "It will be removed from this repair.",
+    "checklist": "Condition check",
+    "issues": "{count, plural, one {# problem} other {# problems}}",
+    "restOk": "Rest works",
+    "items": {
+      "SCREEN": "Screen (no cracks)",
+      "TOUCH": "Touch",
+      "CAMERAS": "Cameras",
+      "BUTTONS": "Buttons",
+      "FACE_ID": "Face ID / fingerprint",
+      "CHARGING": "Charging",
+      "SOUND": "Speaker & mic",
+      "SIGNAL": "Wi-Fi & SIM"
+    },
+    "values": {
+      "ok": "Works",
+      "issue": "Problem",
+      "na": "Can't test"
+    },
+    "signature": "Customer signature",
+    "sign": "Customer signs",
+    "signAgain": "Sign again",
+    "notSigned": "Not signed yet. Hand the screen to the customer.",
+    "signatureAlt": "Customer signature",
+    "signedOn": "Signed {date}",
+    "signTitle": "Customer signature",
+    "signText": "I confirm the phone's condition shown here and agree to the shop's repair terms.",
+    "signHere": "Sign here with your finger",
+    "clear": "Clear",
+    "saveSignature": "Save signature",
+    "signed": "Signature saved",
+    "printTitle": "Condition at check-in",
+    "printLegend": "✓ works · ✗ problem · – can't test"
   }
 }
