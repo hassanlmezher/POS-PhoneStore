@@ -18,14 +18,6 @@ export const shopProfileInput = z.object({
   timezone: z.string().trim().min(1, "required").max(64),
   // Calling code without "+" (961 Lebanon, 971 UAE, 966 KSA).
   countryCode: z.string().trim().regex(/^[1-9]\d{0,3}$/, "invalidCountryCode"),
-  // Google "Ask for reviews" link (g.page/r/…, search.google.com/local/writereview?…); sent after pickup.
-  googleReviewUrl: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .transform((v) => v || null)
-    .refine((v) => v === null || /^https:\/\/[^\s]+\.[^\s]+$/.test(v), "invalidUrl"),
 });
 export type ShopProfileInput = z.input<typeof shopProfileInput>;
 

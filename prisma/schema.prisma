@@ -126,8 +126,6 @@ model Shop {
   defaultWarrantyDays Int       @default(30)
   storageFreeDays     Int       @default(30) // days a ready phone waits free before the storage fee starts
   storageFeeUsdCents  Int       @default(0) // storage fee per extra day; 0 = no fee
-  /// Google review link sent after pickup ("Ask for reviews" link from Google Business Profile).
-  googleReviewUrl     String?
   receiptFooter       String?
   receiptFooterAr     String?
   termsText           String?
@@ -435,8 +433,7 @@ model Ticket {
   pickupReminders  Int          @default(0) // pickup reminders sent since it became Ready (day 3, 14, 30)
   pickupRemindedAt DateTime?
   storageItemId    String? // the "storage fee" line on this ticket, updated instead of duplicated
-  /// After pickup: thank-you + review request, and the 3-day check message.
-  reviewAskedAt    DateTime?
+  /// After pickup: when the 3-day "how is your phone?" message was sent.
   checkSentAt      DateTime?
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt

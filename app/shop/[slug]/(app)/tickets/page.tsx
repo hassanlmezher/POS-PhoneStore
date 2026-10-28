@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Archive, Columns3, Plus, Rows3, SearchX, Star, Wrench } from "lucide-react";
+import { Archive, Columns3, MessageCircleHeart, Plus, Rows3, SearchX, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { UrlSearchInput } from "@/components/url-search-input";
-import { countFollowups } from "@/features/followups/queries";
+import { countChecksDue } from "@/features/followups/queries";
 import { boardTickets, listTickets, listTechnicians, ticketAccessWhere, type TicketCard } from "@/features/tickets/queries";
 import { CLOSED_STATUSES, TICKET_STATUSES, type TicketStatusValue } from "@/features/tickets/schema";
 import { TicketBoard, type BoardCard } from "@/features/tickets/ui/ticket-board";
@@ -44,7 +44,7 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
   const format = await getFormatter();
   const [waitingPickup, followups] = await Promise.all([
     ctx.db.ticket.count({ where: { AND: [{ status: "READY" }, ticketAccessWhere(user)] } }),
-    countFollowups(ctx),
+    countChecksDue(ctx),
   ]);
 
   const view = sp.view === "table" ? "table" : "board";
@@ -76,7 +76,7 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
           </Button>
           <Button variant="outline" asChild>
             <Link href="/tickets/followups">
-              <Star />
+              <MessageCircleHeart />
               {t("afterPickup")}
               {followups > 0 && <span className="rounded-full bg-success-soft px-2 text-xs leading-5 text-success tabular-nums">{followups}</span>}
             </Link>

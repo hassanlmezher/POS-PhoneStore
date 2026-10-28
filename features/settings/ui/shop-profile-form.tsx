@@ -22,7 +22,6 @@ type Props = {
     logoUrl: string | null;
     timezone: string;
     countryCode: string;
-    googleReviewUrl: string | null;
   };
   readOnly: boolean;
 };
@@ -109,7 +108,6 @@ export function ShopProfileForm({ shop, readOnly }: Props) {
   const [locale, setLocale] = useState(shop.defaultLocale);
   const [timezone, setTimezone] = useState(shop.timezone);
   const [countryCode, setCountryCode] = useState(shop.countryCode);
-  const [reviewUrl, setReviewUrl] = useState(shop.googleReviewUrl ?? "");
   const uiLocale = useLocale();
   const zoneGroups = useZoneGroups(shop.timezone, t("shop.timezoneSuggested"), t("shop.timezoneAll"));
   const regionName = (r: string) => displayRegion(uiLocale, r);
@@ -120,7 +118,7 @@ export function ShopProfileForm({ shop, readOnly }: Props) {
     if (!name.trim()) return setErrors({ name: "required" });
     if (!/^[1-9]\d{0,3}$/.test(countryCode)) return setErrors({ countryCode: "invalidCountryCode" });
     startTransition(async () => {
-      const res = await updateShopProfile({ name, address, phone, defaultLocale: locale, timezone, countryCode, googleReviewUrl: reviewUrl });
+      const res = await updateShopProfile({ name, address, phone, defaultLocale: locale, timezone, countryCode });
       if (!res.ok) {
         setErrors(res.fieldErrors ?? {});
         if (!res.fieldErrors) toast.error(t("saveFailed"));
@@ -155,20 +153,6 @@ export function ShopProfileForm({ shop, readOnly }: Props) {
             <Field label={t("shop.address")} htmlFor="shop-address" optional error={errors.address}>
               <Input {...fieldAria("shop-address", errors.address)} value={address} onChange={(e) => setAddress(e.target.value)} />
             </Field>
-            <div id="review-link" className="scroll-mt-24">
-              <Field label={t("shop.reviewUrl")} htmlFor="shop-review-url" optional hint={t("shop.reviewUrlHint")} error={errors.googleReviewUrl}>
-                <Input
-                  {...fieldAria("shop-review-url", errors.googleReviewUrl)}
-                  type="url"
-                  inputMode="url"
-                  dir="ltr"
-                  className="text-start"
-                  placeholder="https://g.page/r/…/review"
-                  value={reviewUrl}
-                  onChange={(e) => setReviewUrl(e.target.value)}
-                />
-              </Field>
-            </div>
             <Field label={t("shop.language")} htmlFor="shop-locale" hint={t("shop.languageHint")}>
               <Segmented
                 id="shop-locale"
