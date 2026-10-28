@@ -435,6 +435,8 @@ model Ticket {
   storageItemId    String? // the "storage fee" line on this ticket, updated instead of duplicated
   /// After pickup: when the 3-day "how is your phone?" message was sent.
   checkSentAt      DateTime?
+  /// Set on a warranty comeback: the original repair this phone came back from (repaired free).
+  comebackOfId     String?
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt
 
@@ -442,6 +444,8 @@ model Ticket {
   customer    Customer          @relation(fields: [customerId], references: [id])
   deviceModel DeviceModel?      @relation(fields: [deviceModelId], references: [id])
   assignedTo  User?             @relation("assignedTo", fields: [assignedToId], references: [id])
+  comebackOf  Ticket?           @relation("comeback", fields: [comebackOfId], references: [id], onDelete: SetNull)
+  comebacks   Ticket[]          @relation("comeback")
   createdBy   User              @relation("createdBy", fields: [createdById], references: [id])
   items       TicketItem[]
   statusLogs  TicketStatusLog[]
@@ -455,6 +459,7 @@ model Ticket {
   @@index([shopId, customerId])
   @@index([shopId, imei])
   @@index([shopId, assignedToId])
+  @@index([shopId, comebackOfId])
   // Child lookups by foreign key (balances, reports, cascades).
   @@index([customerId])
   @@index([deviceModelId])

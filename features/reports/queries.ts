@@ -301,3 +301,49 @@ export async function outstandingBalances(shopId: string) {
     totalDueOnPickupUsdCents: rows.reduce((s, r) => s + r.dueOnPickupUsdCents, 0),
   };
 }
+
+/**
+ * Warranty comebacks opened in the range: their cost (parts used, repaired free), per technician of the
+ * first repair (with the share of their picked-up repairs), and the parts of first repairs that failed most.
+ */
+export async function comebacksReport(shopId: string, range: DayRange) {
+  const [rows, techs] = await Promise.all([
+    prisma.ticket.findMany({
+      where: { shopId, comebackOfId: { not: null }, createdAt: { gte: range.start, lt: range.end } },
+      select: {
+        items: { select: { qty: true, unitCostUsdCents: true } },
+        comebackOf: {
+          select: {
+            assignedToId: true,
+            assignedTo: { select: { name: true } },
+            items: { where: { kind: "PART" }, select: { description: true, product: { select: { name: true } } } },
+          },
+        },
+      },
+      take: 2000,
+    }),
+    revenueByTechnician(shopId, range),
+  ]);
+  const byTech = new Map<string, { techId: string | null; name: string | null; comebacks: number; repairs: number }>();
+  for (const t of techs) byTech.set(t.techId ?? "", { techId: t.techId, name: t.name, comebacks: 0, repairs: t.repairs });
+  const parts = new Map<string, number>();
+  let costUsdCents = 0;
+  for (const r of rows) {
+    costUsdCents += r.items.reduce((s, i) => s + i.qty * i.unitCostUsdCents, 0);
+    const o = r.comebackOf;
+    const key = o?.assignedToId ?? "";
+    const row = byTech.get(key) ?? { techId: o?.assignedToId ?? null, name: o?.assignedTo?.name ?? null, comebacks: 0, repairs: 0 };
+    row.comebacks += 1;
+    byTech.set(key, row);
+    // Each failed part counts once per comeback.
+    for (const name of new Set((o?.items ?? []).map((i) => i.product?.name ?? i.description))) parts.set(name, (parts.get(name) ?? 0) + 1);
+  }
+  const repairs = techs.reduce((s, t) => s + t.repairs, 0);
+  return {
+    count: rows.length,
+    repairs,
+    costUsdCents,
+    techs: [...byTech.values()].filter((t) => t.comebacks > 0).sort((a, b) => b.comebacks - a.comebacks),
+    parts: [...parts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10),
+  };
+}

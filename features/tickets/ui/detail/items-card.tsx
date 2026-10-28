@@ -20,9 +20,9 @@ import { cn } from "@/lib/utils";
 type Item = { id: string; kind: "PART" | "LABOR"; description: string; qty: number; unitPriceUsdCents: number; productId: string | null };
 type Part = Awaited<ReturnType<typeof searchParts>>[number];
 
-type Props = { ticketId: string; items: Item[]; totalUsdCents: number; canEdit: boolean; rate: number; rounding: number };
+type Props = { ticketId: string; items: Item[]; totalUsdCents: number; canEdit: boolean; rate: number; rounding: number; /** Warranty comeback: lines are free. */ free?: boolean };
 
-export function ItemsCard({ ticketId, items, totalUsdCents, canEdit, rate, rounding }: Props) {
+export function ItemsCard({ ticketId, items, totalUsdCents, canEdit, rate, rounding, free = false }: Props) {
   const t = useTranslations("ticket");
   const tc = useTranslations("common");
   const [pending, startTransition] = useTransition();
@@ -102,12 +102,12 @@ export function ItemsCard({ ticketId, items, totalUsdCents, canEdit, rate, round
         )
       )}
 
-      {adding && <AddItemForm ticketId={ticketId} rate={rate} rounding={rounding} onDone={() => setAdding(false)} />}
+      {adding && <AddItemForm ticketId={ticketId} rate={rate} rounding={rounding} free={free} onDone={() => setAdding(false)} />}
     </section>
   );
 }
 
-function AddItemForm({ ticketId, rate, rounding, onDone }: { ticketId: string; rate: number; rounding: number; onDone: () => void }) {
+function AddItemForm({ ticketId, rate, rounding, free, onDone }: { ticketId: string; rate: number; rounding: number; free: boolean; onDone: () => void }) {
   const t = useTranslations("ticket");
   const tc = useTranslations("common");
   const listId = useId();
@@ -120,7 +120,7 @@ function AddItemForm({ ticketId, rate, rounding, onDone }: { ticketId: string; r
   const [active, setActive] = useState(0);
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("1");
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(free ? "0.00" : "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const debounced = useDebounced(query, 200);
 
@@ -143,7 +143,7 @@ function AddItemForm({ ticketId, rate, rounding, onDone }: { ticketId: string; r
   function choose(p: Part) {
     setPart(p);
     setDescription(p.name);
-    setPrice((p.priceUsdCents / 100).toFixed(2));
+    setPrice(free ? "0.00" : (p.priceUsdCents / 100).toFixed(2));
     setOpen(false);
     requestAnimationFrame(() => document.getElementById("item-price")?.focus());
   }
@@ -301,7 +301,7 @@ function AddItemForm({ ticketId, rate, rounding, onDone }: { ticketId: string; r
           />
         </Field>
         <Field label={t("unitPrice")} htmlFor="item-price" error={errors.unitPrice}>
-          <MoneyInput {...fieldAria("item-price", errors.unitPrice)} value={price} onValueChange={setPrice} rate={rate} rounding={rounding} placeholder="0.00" />
+          <MoneyInput {...fieldAria("item-price", errors.unitPrice)} value={price} onValueChange={setPrice} rate={rate} rounding={rounding} placeholder="0.00" disabled={free} />
         </Field>
       </div>
       <div className="flex gap-2">

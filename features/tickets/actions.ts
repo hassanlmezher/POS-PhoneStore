@@ -296,6 +296,8 @@ export async function addTicketItem(ticketId: string, input: TicketItemInput): P
   await prisma.$transaction(async (tx) => {
     // Serialize item changes per ticket so the recomputed total includes every line.
     await lockRows(tx, "Ticket", shopId, [ticketId]);
+    // Warranty comebacks are repaired free: lines keep their cost but no price.
+    const comeback = await tx.ticket.findFirst({ where: { id: ticketId, shopId, comebackOfId: { not: null } }, select: { id: true } });
     let unitCostUsdCents = 0;
     if (v.kind === "PART" && v.productId) {
       const product = await tx.product.findFirst({
@@ -313,7 +315,7 @@ export async function addTicketItem(ticketId: string, input: TicketItemInput): P
         productId: v.kind === "PART" ? v.productId : null,
         description: v.description,
         qty: v.qty,
-        unitPriceUsdCents: v.unitPriceUsdCents,
+        unitPriceUsdCents: comeback ? 0 : v.unitPriceUsdCents,
         unitCostUsdCents,
       },
     });

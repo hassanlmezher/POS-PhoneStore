@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowRight, BadgeCheck, CalendarClock, ChevronLeft, MessageSquareText, Phone, ShieldCheck, ShoppingCart, UserRound } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarClock, ChevronLeft, MessageSquareText, Phone, RotateCcw, ShieldCheck, ShoppingCart, UserRound } from "lucide-react";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
@@ -12,6 +12,7 @@ import { ApprovalCard, type ApprovalView } from "@/features/approvals/ui/approva
 import { suggestedTemplate, ticketWhatsAppLinks } from "@/features/tickets/notify";
 import { checkWhatsApp } from "@/features/followups/message";
 import { FollowupButton } from "@/features/followups/ui/followup-button";
+import { ComebackDialog } from "@/features/comebacks/ui/comeback-dialog";
 import { getTicketByNumber, listTechnicians } from "@/features/tickets/queries";
 import { CreatedBanner } from "@/features/tickets/ui/detail/created-banner";
 import { EditDetailsButton } from "@/features/tickets/ui/detail/edit-details-dialog";
@@ -86,6 +87,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
   const canEdit = can(user.role, "tickets.create") && !readOnly;
   const canPos = can(user.role, "pos") && !readOnly;
   const overdue = isOverdue(ticket.promisedAt, ticket.status);
+  const tcb = await getTranslations("comebacks");
   // After pickup: the "how is your phone?" check message.
   const followup =
     ticket.status === "PICKED_UP" && ticket.customer.phone
@@ -154,7 +156,22 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
             <StatusBadge status={ticket.status} />
             {overdue && <Badge variant="destructive">{t("overdue")}</Badge>}
             {approval?.status === "PENDING" && <Badge variant="warning">{tap("chipPending")}</Badge>}
+            {ticket.comebackOf && <Badge variant="warning">{tcb("badge")}</Badge>}
           </div>
+          {ticket.comebackOf && (
+            <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+              <RotateCcw aria-hidden className="size-4" />
+              {tcb.rich("comebackOf", {
+                ticket: formatTicketNumber(shop.ticketPrefix, ticket.comebackOf.number),
+                l: (c) => (
+                  <Link href={`/tickets/${ticket.comebackOf!.number}`} className="font-medium text-primary hover:underline">
+                    <Ltr>{c}</Ltr>
+                  </Link>
+                ),
+              })}
+              {ticket.comebackOf.assignedTo && <span>· {tcb("firstTech", { name: ticket.comebackOf.assignedTo.name })}</span>}
+            </p>
+          )}
           <p className="text-lg font-medium">{ticket.device}</p>
           <div className="flex flex-wrap items-center gap-x-4 text-sm text-muted-foreground">
             <Link href={`/customers/${ticket.customer.id}`} className="inline-flex min-h-11 items-center gap-1.5 text-foreground hover:text-primary">
@@ -235,6 +252,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
             canEdit={canItems}
             rate={rate}
             rounding={rounding}
+            free={!!ticket.comebackOf}
           />
 
           <Card title={t("timeline")}>
@@ -397,6 +415,26 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
               </div>
               <WarrantyBadge until={ticket.warrantyUntil} showNotStarted />
               {!ticket.warrantyUntil && ticket.warrantyDays > 0 && <p className="text-xs text-muted-foreground">{t("warrantyStartsAtPickup")}</p>}
+              {ticket.comebacks.length > 0 && (
+                <div className="mt-1 flex flex-col gap-1 border-t pt-2 text-sm">
+                  <span className="text-xs font-medium text-muted-foreground">{tcb("cameBack", { count: ticket.comebacks.length })}</span>
+                  {ticket.comebacks.map((c) => (
+                    <Link key={c.id} href={`/tickets/${c.number}`} className="flex items-center justify-between gap-2 hover:underline">
+                      <Ltr className="font-medium">{formatTicketNumber(shop.ticketPrefix, c.number)}</Ltr>
+                      <span className="text-xs text-muted-foreground">{format.dateTime(c.createdAt, { dateStyle: "medium" })}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {ticket.status === "PICKED_UP" && canEdit && (
+                <ComebackDialog
+                  originalId={ticket.id}
+                  label={label}
+                  device={ticket.device}
+                  warrantyUntil={ticket.warrantyUntil?.toISOString() ?? null}
+                  className="mt-1 w-full"
+                />
+              )}
             </div>
           </Card>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ChartColumn, Download, HandCoins, Package, Percent, ReceiptText, ShoppingBag, UserRound, Wallet, Wrench } from "lucide-react";
+import { ChartColumn, Download, HandCoins, Package, Percent, ReceiptText, RotateCcw, ShoppingBag, UserRound, Wallet, Wrench } from "lucide-react";
 import { BarChart } from "@/components/bar-chart";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RealProfitCard } from "@/features/expenses/ui/real-profit-card";
 import { BalancesList } from "@/features/reports/ui/balances-list";
-import { bestSellers, outstandingBalances, profitSummary, repairsByStatus, revenueByTechnician } from "@/features/reports/queries";
+import { bestSellers, comebacksReport, outstandingBalances, profitSummary, repairsByStatus, revenueByTechnician } from "@/features/reports/queries";
 import { startOfDay, type DayRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { formatTicketNumber } from "@/lib/numbering";
@@ -148,12 +148,16 @@ export async function OverviewSection({ ctx, range }: Props) {
 
 export async function RepairsSection({ ctx, range }: Props) {
   const { shop } = ctx;
-  const [t, ts, statuses, techs] = await Promise.all([
+  const [t, ts, tcb, format, statuses, techs, cb] = await Promise.all([
     getTranslations("reports"),
     getTranslations("status"),
+    getTranslations("comebacks"),
+    getFormatter(),
     repairsByStatus(shop.id, range),
     revenueByTechnician(shop.id, range),
+    comebacksReport(shop.id, range),
   ]);
+  const rate = (n: number, of: number) => (of > 0 ? format.number(n / of, { style: "percent", maximumFractionDigits: 1 }) : "—");
   const money = (c: number) => (
     <Money usdCents={c} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end whitespace-nowrap rtl:items-start" lbpClassName="text-xs" />
   );
@@ -224,6 +228,60 @@ export async function RepairsSection({ ctx, range }: Props) {
                 )}
               </TableBody>
             </Table>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title={tcb("reportTitle")} description={tcb("reportHint")} className="xl:col-span-2">
+        {cb.count === 0 ? (
+          <EmptyState icon={RotateCcw} title={tcb("noneTitle")} body={tcb("noneBody")} className="py-6" />
+        ) : (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">{tcb("statCount")}</p>
+                <p className="text-xl font-semibold tabular-nums">{cb.count}</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">{tcb("statRate")}</p>
+                <p className="text-xl font-semibold tabular-nums">{rate(cb.count, cb.repairs)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">{tcb("statCost")}</p>
+                <Money usdCents={cb.costUsdCents} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="text-xl font-semibold" lbpClassName="text-xs font-normal" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">{tcb("byTech")}</h3>
+                <ul className="divide-y rounded-lg border">
+                  {cb.techs.map((r) => (
+                    <li key={r.techId ?? "none"} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                      <span className={cn("min-w-0 truncate font-medium", !r.name && "text-muted-foreground italic")}>{r.name ?? t("unassigned")}</span>
+                      <span className="shrink-0 text-end tabular-nums">
+                        {tcb("techLine", { count: r.comebacks })}
+                        {r.repairs > 0 && <span className="ms-2 text-xs text-muted-foreground">{tcb("ofRepairs", { rate: rate(r.comebacks, r.repairs), repairs: r.repairs })}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">{tcb("byPart")}</h3>
+                {cb.parts.length === 0 ? (
+                  <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">{tcb("noParts")}</p>
+                ) : (
+                  <ul className="divide-y rounded-lg border">
+                    {cb.parts.map((p) => (
+                      <li key={p.name} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                        <span dir="auto" className="min-w-0 truncate rtl:text-right">{p.name}</span>
+                        <span className="shrink-0 tabular-nums">{tcb("techLine", { count: p.count })}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </SectionCard>

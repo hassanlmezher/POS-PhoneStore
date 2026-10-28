@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { WarrantyBanner } from "@/features/comebacks/ui/warranty-banner";
 import type { PriceRow } from "@/features/prices/queries";
 import { createTicket } from "@/features/tickets/actions";
 import { ACCESSORIES, PAYMENT_METHODS, isValidPattern, type TicketInput } from "@/features/tickets/schema";
@@ -232,6 +233,8 @@ export function IntakeForm(props: IntakeFormProps) {
             autoFocus={!props.initialCustomer}
           />
         </Section>
+
+        <WarrantyBanner customerId={customer?.id ?? null} problem={problem} />
 
         <Section title={t("deviceSection")}>
           <DevicePicker autoFocus={!!props.initialCustomer} catalog={props.catalog} value={device} onChange={setDevice} error={errors.deviceModelId ?? errors.modelText} />

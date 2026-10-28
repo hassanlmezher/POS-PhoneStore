@@ -135,6 +135,8 @@ export async function getTicketByNumber(ctx: ShopContext, number: number) {
       deviceModel: { include: { brand: true } },
       assignedTo: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
+      comebackOf: { select: { id: true, number: true, assignedTo: { select: { name: true } } } },
+      comebacks: { orderBy: { createdAt: "asc" }, select: { id: true, number: true, status: true, createdAt: true } },
       items: { orderBy: { createdAt: "asc" }, include: { product: { select: { id: true, name: true, qty: true } } } },
       statusLogs: { orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } },
       notes: { orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } },
