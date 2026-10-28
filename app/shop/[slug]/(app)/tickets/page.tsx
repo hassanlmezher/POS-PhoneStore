@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Archive, Columns3, MessageCircleHeart, Plus, Rows3, SearchX, Wrench } from "lucide-react";
+import { Archive, Columns3, MessageCircleHeart, Plus, Rows3, SearchX, Truck, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { UrlSearchInput } from "@/components/url-search-input";
 import { countChecksDue } from "@/features/followups/queries";
+import { partOrderCounts } from "@/features/partorders/queries";
 import { boardTickets, listTickets, listTechnicians, ticketAccessWhere, type TicketCard } from "@/features/tickets/queries";
 import { CLOSED_STATUSES, TICKET_STATUSES, type TicketStatusValue } from "@/features/tickets/schema";
 import { TicketBoard, type BoardCard } from "@/features/tickets/ui/ticket-board";
@@ -42,9 +43,10 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
   const t = await getTranslations("tickets");
   const tc = await getTranslations("common");
   const format = await getFormatter();
-  const [waitingPickup, followups] = await Promise.all([
+  const [waitingPickup, followups, parts] = await Promise.all([
     ctx.db.ticket.count({ where: { AND: [{ status: "READY" }, ticketAccessWhere(user)] } }),
     countChecksDue(ctx),
+    partOrderCounts(ctx),
   ]);
 
   const view = sp.view === "table" ? "table" : "board";
@@ -71,6 +73,17 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
               {t("waitingPickup")}
               {waitingPickup > 0 && (
                 <span className="rounded-full bg-status-ready px-2 text-xs leading-5 text-status-ready-foreground tabular-nums">{waitingPickup}</span>
+              )}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/tickets/parts">
+              <Truck />
+              {t("partOrders")}
+              {parts.late > 0 ? (
+                <span className="rounded-full bg-destructive-soft px-2 text-xs leading-5 text-destructive tabular-nums">{t("lateCount", { count: parts.late })}</span>
+              ) : (
+                parts.waiting > 0 && <span className="rounded-full bg-muted px-2 text-xs leading-5 tabular-nums">{parts.waiting}</span>
               )}
             </Link>
           </Button>

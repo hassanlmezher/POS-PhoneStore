@@ -93,6 +93,12 @@ enum CashMovementType {
   PAY_OUT
 }
 
+enum PartOrderStatus {
+  ORDERED
+  ARRIVED
+  CANCELLED
+}
+
 enum TicketMediaKind {
   PHOTO
   SIGNATURE
@@ -167,6 +173,7 @@ model Shop {
   expenses             Expense[]
   repairPrices         RepairPrice[]
   ticketMedia          TicketMedia[]
+  partOrders           PartOrder[]
   templates            MessageTemplate[]
   exchangeRates        ExchangeRate[]
   subscriptionPayments SubscriptionPayment[]
@@ -290,6 +297,7 @@ model User {
   cashMovements    CashMovement[]
   expenses         Expense[]
   ticketMedia      TicketMedia[]
+  partOrders       PartOrder[]
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -456,6 +464,7 @@ model Ticket {
   comebackOf  Ticket?           @relation("comeback", fields: [comebackOfId], references: [id], onDelete: SetNull)
   comebacks   Ticket[]          @relation("comeback")
   media       TicketMedia[]
+  partOrders  PartOrder[]
   createdBy   User              @relation("createdBy", fields: [createdById], references: [id])
   items       TicketItem[]
   statusLogs  TicketStatusLog[]
@@ -767,6 +776,35 @@ model TicketMedia {
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id])
 
+  @@index([shopId, ticketId])
+}
+
+// A part ordered from a supplier for a repair: who it was ordered from, when it should arrive, and
+// whether the customer was told. Supplier is plain text for now (suppliers get their own table later).
+model PartOrder {
+  id             String          @id @default(cuid())
+  shopId         String
+  ticketId       String
+  part           String
+  qty            Int             @default(1)
+  supplierName   String
+  supplierPhone  String?
+  costUsdCents   Int?
+  status         PartOrderStatus @default(ORDERED)
+  /// Local day the part should arrive, stored at local noon.
+  expectedAt     DateTime
+  arrivedAt      DateTime?
+  supplierSentAt DateTime?
+  customerToldAt DateTime?
+  note           String?
+  userId         String
+  createdAt      DateTime        @default(now())
+
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([shopId, status, expectedAt])
   @@index([shopId, ticketId])
 }
 

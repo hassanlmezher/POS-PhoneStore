@@ -13,6 +13,8 @@ import { suggestedTemplate, ticketWhatsAppLinks } from "@/features/tickets/notif
 import { checkWhatsApp } from "@/features/followups/message";
 import { FollowupButton } from "@/features/followups/ui/followup-button";
 import { readChecklist } from "@/features/checkin/rules";
+import { knownSuppliers, ticketPartOrders } from "@/features/partorders/queries";
+import { OrderList } from "@/features/partorders/ui/order-list";
 import { CheckinCard } from "@/features/checkin/ui/checkin-card";
 import { ComebackDialog } from "@/features/comebacks/ui/comeback-dialog";
 import { getTicketByNumber, listTechnicians } from "@/features/tickets/queries";
@@ -29,6 +31,7 @@ import { isOverdue } from "@/features/tickets/ui/ticket-utils";
 import { WarrantyBadge } from "@/features/tickets/ui/warranty-badge";
 import { formatMoney } from "@/lib/money";
 import { formatTicketNumber, parseTicketNumber } from "@/lib/numbering";
+import { dayKey } from "@/lib/dates";
 import { can } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requireShop } from "@/lib/tenant";
@@ -125,7 +128,15 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
 
   type Entry = { id: string; at: Date; who: string; kind: "status" | "note" | "approval"; from?: string | null; to?: string; body?: string | null; text?: string };
   // "@key" notes are written by the system and translated here.
-  const systemNote = (note: string | null) => (note === "@approvedByCustomer" ? tap("systemApproved") : note);
+  const tpo = await getTranslations("partOrders");
+  const systemNotes: Record<string, string> = {
+    "@approvedByCustomer": tap("systemApproved"),
+    "@partOrdered": tpo("systemOrdered"),
+    "@partsArrived": tpo("systemArrived"),
+  };
+  const systemNote = (note: string | null) => (note && systemNotes[note]) || note;
+  const [partOrders, suppliers] = await Promise.all([ticketPartOrders(ctx, ticket.id), knownSuppliers(ctx)]);
+  const showPartOrders = partOrders.length > 0 || !closed;
   const timeline: Entry[] = [
     ...ticket.statusLogs.map((l) => ({ id: l.id, at: l.createdAt, who: l.user.name, kind: "status" as const, from: l.from, to: l.to, body: systemNote(l.note) })),
     ...ticket.notes.map((n) => ({ id: n.id, at: n.createdAt, who: n.user.name, kind: "note" as const, body: n.body })),
@@ -332,6 +343,20 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
                 rate={rate}
                 rounding={rounding}
               />
+            </Card>
+          )}
+          {showPartOrders && (
+            <Card title={tpo("cardTitle")}>
+              <OrderList
+                rows={partOrders}
+                canEdit={canStatus}
+                suppliers={suppliers}
+                today={dayKey(new Date(), shop.timezone)}
+                rate={rate}
+                rounding={rounding}
+                ticketId={closed ? null : ticket.id}
+              />
+              {closed && partOrders.length === 0 && <p className="text-sm text-muted-foreground">{tpo("none")}</p>}
             </Card>
           )}
           <Card title={t("money")}>

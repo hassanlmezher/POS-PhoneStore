@@ -73,3 +73,8 @@ export function isTimeZone(tz: string): boolean {
     return false;
   }
 }
+
+/** Noon of a local day: a safe instant for "date only" values, never shifted to the day before or after. */
+export function localNoon(key: string, tz: string): Date {
+  return new Date(startOfDay(key, tz).getTime() + 12 * 3_600_000);
+}
