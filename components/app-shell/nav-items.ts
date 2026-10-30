@@ -6,6 +6,7 @@ import {
   Receipt,
   Settings,
   Tags,
+  Truck,
   ShoppingCart,
   Users,
   Wallet,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { can, type Permission, type Role } from "@/lib/permissions";
 
-export type NavKey = "dashboard" | "tickets" | "prices" | "pos" | "sales" | "customers" | "inventory" | "cash" | "expenses" | "reports" | "settings";
+export type NavKey = "dashboard" | "tickets" | "prices" | "pos" | "sales" | "customers" | "inventory" | "cash" | "expenses" | "suppliers" | "reports" | "settings";
 
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; permission?: Permission };
 
@@ -28,6 +29,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { key: "customers", href: "/customers", icon: Users },
   { key: "inventory", href: "/inventory", icon: Package },
   { key: "cash", href: "/cash", icon: Wallet, permission: "cash" },
+  { key: "suppliers", href: "/suppliers", icon: Truck, permission: "suppliers" },
   { key: "expenses", href: "/expenses", icon: Banknote, permission: "expenses" },
   { key: "reports", href: "/reports", icon: ChartColumn, permission: "reports" },
   { key: "settings", href: "/settings", icon: Settings, permission: "settings" },

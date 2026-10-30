@@ -12,6 +12,7 @@ export type Permission =
   | "reports"
   | "expenses"
   | "prices.edit"
+  | "suppliers"
   | "sales.void"
   | "settings";
 
@@ -28,6 +29,7 @@ const matrix: Record<Role, readonly Permission[]> = {
     "reports",
     "expenses",
     "prices.edit",
+    "suppliers",
     "sales.void",
     "settings",
   ],

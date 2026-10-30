@@ -174,6 +174,10 @@ model Shop {
   repairPrices         RepairPrice[]
   ticketMedia          TicketMedia[]
   partOrders           PartOrder[]
+  suppliers            Supplier[]
+  purchases            Purchase[]
+  purchaseItems        PurchaseItem[]
+  supplierPayments     SupplierPayment[]
   templates            MessageTemplate[]
   exchangeRates        ExchangeRate[]
   subscriptionPayments SubscriptionPayment[]
@@ -298,6 +302,8 @@ model User {
   expenses         Expense[]
   ticketMedia      TicketMedia[]
   partOrders       PartOrder[]
+  purchases        Purchase[]
+  supplierPayments SupplierPayment[]
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -567,6 +573,7 @@ model Product {
   stockMovements   StockMovement[]
   ticketItems      TicketItem[]
   saleItems        SaleItem[]
+  purchaseItems    PurchaseItem[]
 
   @@unique([shopId, sku])
   @@unique([shopId, barcode])
@@ -727,10 +734,11 @@ model CashMovement {
   userId        String
   createdAt     DateTime         @default(now())
 
-  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  cashSession CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id])
-  expense     Expense?
+  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  cashSession     CashSession      @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+  expense         Expense?
+  supplierPayment SupplierPayment?
 
   @@index([shopId, cashSessionId])
   // Child lookups by foreign key (balances, reports, cascades).
@@ -806,6 +814,88 @@ model PartOrder {
 
   @@index([shopId, status, expectedAt])
   @@index([shopId, ticketId])
+}
+
+// Wholesalers the shop buys stock from. Owed = purchases − payments (USD cents).
+model Supplier {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  phone     String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  shop      Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+  payments  SupplierPayment[]
+
+  @@index([shopId, name])
+}
+
+// Stock bought from a supplier (priced in USD). Items go into stock and update the product's average cost.
+model Purchase {
+  id            String   @id @default(cuid())
+  shopId        String
+  supplierId    String
+  /// Supplier's invoice number, if any.
+  reference     String?
+  totalUsdCents Int
+  /// Local day of the purchase, stored at local noon.
+  purchasedAt   DateTime
+  note          String?
+  userId        String
+  createdAt     DateTime @default(now())
+
+  shop     Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  user     User              @relation(fields: [userId], references: [id])
+  items    PurchaseItem[]
+  payments SupplierPayment[]
+
+  @@index([shopId, supplierId, purchasedAt])
+}
+
+model PurchaseItem {
+  id               String @id @default(cuid())
+  shopId           String
+  purchaseId       String
+  productId        String
+  qty              Int
+  unitCostUsdCents Int
+
+  shop     Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([shopId, purchaseId])
+  @@index([shopId, productId])
+}
+
+// Money paid to a supplier (recorded, not processed). Cash can come out of the open drawer.
+model SupplierPayment {
+  id                 String        @id @default(cuid())
+  shopId             String
+  supplierId         String
+  /// Paid together with a purchase (the "paid now" part), if any.
+  purchaseId         String?
+  method             PaymentMethod
+  currency           Currency
+  amount             Int
+  rate               Int
+  usdCentsEquivalent Int
+  paidAt             DateTime
+  note               String?
+  cashMovementId     String?       @unique
+  userId             String
+  createdAt          DateTime      @default(now())
+
+  shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier     Supplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchase     Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  cashMovement CashMovement? @relation(fields: [cashMovementId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id])
+
+  @@index([shopId, supplierId, paidAt])
 }
 
 // ---------- Messaging ----------
