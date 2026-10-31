@@ -975,7 +975,9 @@
     "lowStockHint": "Warn when stock falls to this number.",
     "compatibleHint": "Helps find the right part from a repair ticket.",
     "archive": "Archive this product",
-    "archiveHint": "Hidden from the POS and lists; history is kept."
+    "archiveHint": "Hidden from the POS and lists; history is kept.",
+    "namePlaceholderPhone": "e.g. iPhone 13 128GB (used)",
+    "categoryPlaceholderPhone": "e.g. Used phones"
   },
   "product": {
     "edit": "Edit",
@@ -2031,6 +2033,8 @@
     "sellPrice": "Selling price",
     "barcode": "Barcode",
     "findProduct": "Search by product name",
-    "noMatch": "No product matches."
+    "noMatch": "No product matches.",
+    "suggested": "Suggested: {count}",
+    "qtyFor": "Quantity for {name}"
   }
 }

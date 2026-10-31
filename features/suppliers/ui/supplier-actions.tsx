@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { HandCoins, ListChecks, Loader2, MessageCircle, PackagePlus, Plus, Search, Trash2, Wallet } from "lucide-react";
@@ -17,6 +17,7 @@ import type { ReorderRow } from "@/features/suppliers/queries";
 import { PRODUCT_TYPES, type ProductTypeKey } from "@/features/inventory/schema";
 import { PayFields, type PayState } from "@/features/suppliers/ui/pay-fields";
 import { useDebounced } from "@/lib/use-debounced";
+import { useFlip } from "@/lib/use-flip";
 import { fillTemplate, waLink } from "@/lib/whatsapp";
 import { formatMoney, parseMoney, toLbp } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -302,19 +303,22 @@ export function PurchaseButton(c: Common) {
                   return (
                     <li key={l.key} className="flex flex-col gap-2 p-3">
                       {!l.productId && (
-                        <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-2.5">
+                        <div className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3">
                           <p className="text-xs font-semibold text-primary">{t("newProduct")}</p>
                           <Field label={t("productName")} htmlFor={`pu-name-${i}`} error={e("newProduct.name")}>
                             <Input {...fieldAria(`pu-name-${i}`, e("newProduct.name"))} dir="auto" maxLength={150} value={l.name} onChange={(ev) => setLine(i, { name: ev.target.value })} />
                           </Field>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-sm font-medium">{t("productType")}</span>
                             <Segmented
                               label={t("productType")}
                               value={l.type}
                               onValueChange={(v) => setLine(i, { type: v })}
-                              className="self-end"
                               options={PRODUCT_TYPES.map((v) => ({ value: v, label: tt(v) }))}
+                              className="w-full sm:w-96"
                             />
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <Field label={t("sellPrice")} htmlFor={`pu-price-${i}`} error={e("newProduct.price")}>
                               <MoneyInput {...fieldAria(`pu-price-${i}`, e("newProduct.price"))} value={l.price} onValueChange={(v) => setLine(i, { price: v })} />
                             </Field>
@@ -394,9 +398,12 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [find, setFind] = useState("");
+  const listRef = useRef<HTMLUListElement>(null);
   const term = find.trim().toLowerCase();
   // Ticked products first so the order is easy to check; otherwise least in stock first.
   const shown = [...(term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows)].sort((a, b) => Number(b.id in picked) - Number(a.id in picked));
+  // Ticked rows slide up to the top.
+  useFlip(listRef);
   const items = rows.filter((r) => picked[r.id] && Number(picked[r.id]) > 0);
   const message = fillTemplate(texts.body, {
     supplier: supplierName,
@@ -419,8 +426,9 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
         {t("whatToOrder")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        {/* Only the list scrolls: search, preview and the send button stay in view. */}
+        <DialogContent className="overflow-hidden sm:max-w-lg">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{t("whatToOrder")}</DialogTitle>
             <DialogDescription>{t("reorderHint")}</DialogDescription>
           </DialogHeader>
@@ -428,31 +436,35 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
             <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{t("nothingLow")}</p>
           ) : (
             <>
-            <div className="relative">
+            <div className="relative shrink-0">
               <Search aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
               <Input type="search" aria-label={t("findProduct")} placeholder={t("findProduct")} className="ps-9" value={find} onChange={(e) => setFind(e.target.value)} />
             </div>
             {shown.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">{t("noMatch")}</p>}
-            <ul className={cn("flex flex-col divide-y rounded-lg border", shown.length === 0 && "hidden")}>
+            <ul ref={listRef} className={cn("relative -mt-2 flex min-h-24 flex-col divide-y overflow-y-auto overscroll-contain rounded-lg border", shown.length === 0 && "hidden")}>
               {shown.map((r) => {
                 const on = !!picked[r.id];
                 return (
-                  <li key={r.id} className="flex items-center gap-3 p-2.5">
+                  <li key={r.id} data-flip-id={r.id} className={cn("relative flex min-h-14 shrink-0 items-center gap-3 px-3 py-2 transition-colors", on ? "z-10 bg-primary-soft" : "bg-card")}>
                     <input
                       type="checkbox"
-                      className="size-5 accent-[var(--color-primary)]"
-                      aria-label={r.name}
+                      id={`ro-${r.id}`}
+                      className="size-5 shrink-0 accent-[var(--color-primary)]"
                       checked={on}
                       onChange={(e) =>
                         setPicked((cur) => {
                           const next = { ...cur };
-                          if (e.target.checked) next[r.id] = String(r.suggested);
-                          else delete next[r.id];
+                          if (e.target.checked) {
+                            next[r.id] = String(r.suggested);
+                            // Follow the row up to the top of the list.
+                            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                            listRef.current?.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+                          } else delete next[r.id];
                           return next;
                         })
                       }
                     />
-                    <span className="min-w-0 flex-1">
+                    <label htmlFor={`ro-${r.id}`} className="min-w-0 flex-1 cursor-pointer">
                       <span dir="auto" className="block truncate text-sm font-medium rtl:text-right">
                         {r.name}
                       </span>
@@ -460,17 +472,20 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
                         {t("inStock", { count: r.qty })}
                         {r.fromSupplier && ` · ${t("boughtHere")}`}
                       </span>
-                    </span>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      aria-label={t("qty")}
-                      className="h-10 w-20"
-                      disabled={!on}
-                      value={picked[r.id] ?? ""}
-                      onChange={(e) => setPicked((cur) => ({ ...cur, [r.id]: e.target.value }))}
-                    />
+                    </label>
+                    {on ? (
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        aria-label={t("qtyFor", { name: r.name })}
+                        className="h-10 w-20 shrink-0 text-center"
+                        value={picked[r.id]}
+                        onChange={(e) => setPicked((cur) => ({ ...cur, [r.id]: e.target.value }))}
+                      />
+                    ) : (
+                      <span className="w-20 shrink-0 text-center text-xs text-muted-foreground">{t("suggested", { count: r.suggested })}</span>
+                    )}
                   </li>
                 );
               })}
@@ -478,11 +493,11 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
             </>
           )}
           {items.length > 0 && (
-            <div className="rounded-lg bg-wa-wallpaper p-3">
+            <div className="max-h-24 shrink-0 overflow-y-auto rounded-lg bg-wa-wallpaper p-2.5 sm:max-h-32">
               <p className="w-fit max-w-full rounded-lg bg-wa-bubble px-3 py-2 text-sm leading-relaxed whitespace-pre-line text-wa-text shadow-card [overflow-wrap:anywhere]">{message}</p>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button asChild className={cn("bg-success text-success-foreground hover:bg-success/90", !items.length && "pointer-events-none opacity-50")} aria-disabled={!items.length}>
               <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
                 <MessageCircle />

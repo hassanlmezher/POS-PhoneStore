@@ -44,6 +44,7 @@ Full route test with temporary accounts (never real passwords). Tests that creat
 - Reuse existing components and utilities before creating new ones (see list below).
 - Use subagents only for genuinely parallel or large isolated tasks (e.g. ui-designer for a new screen), not for small lookups.
 - Run type-check and lint after each feature, not after each edit. Fix errors in one pass.
+- **After every change, check the UI yourself**: screenshot each affected screen and state (dialogs, new form parts) in EN and AR, desktop and phone (375px). If anything looks broken (misaligned, overflowing, cramped, cut off, sideways scroll), fix it and re-check before reporting. Reading text with JS is not enough.
 - If something is ambiguous and cheap to change later, make a sensible choice and log it in `DECISIONS.md` instead of asking.
 - Update "Current status" above at the end of every work session (3–5 lines: done, next, open issues).
 - Stop after each build phase for owner review.
@@ -78,6 +79,7 @@ _(Keep this list updated as they are created.)_
 - `components/pagination.tsx`, `components/url-search-input.tsx` (debounced `?q=`), `components/stat-tile.tsx`, `components/ltr.tsx` (`<Ltr>` for phones/IMEIs/labels), `components/auto-print.tsx`.
 - `components/app-shell/global-search.tsx` (uses `features/search/actions.ts`).
 - `features/tickets/ui/*`: intake-form, customer-picker, device-picker, ticket-board, warranty-badge, detail/*; `features/customers/ui/customer-dialog.tsx`.
+- `lib/use-flip.ts` `useFlip(listRef)`: rows with `data-flip-id` slide to their new place when the list reorders (reduced-motion aware).
 - `lib/use-debounced.ts`; `lib/phone.ts` `formatPhone()`; `lib/numbering.ts` (next ticket/sale number, format/parse label); `lib/stock.ts` `moveStock()`; `lib/whatsapp.ts` (`fillTemplate`, `waLink`); `features/tickets/money.ts` (charge/paid/balance, warrantyUntil).
 - `components/brand-logo.tsx`: `<BrandLogo className alt? priority? />`, the product logo (`public/brand/logo.svg`; PNGs 180/192/512 alongside; `app/icon.svg`, `app/apple-icon.png`, `app/manifest.ts`).
 - `components/link-tabs.tsx` (URL-driven tabs with count badge; client: scrolls active tab into view, fades hidden edge), `components/stock-level.tsx` (`<StockLevel qty threshold />`, `stockState()`). `ConfirmDialog` also takes `children`, `confirmDisabled`, `onOpenChange`; `CustomerDialog` takes `defaults`, `onCreated`.

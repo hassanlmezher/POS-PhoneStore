@@ -129,7 +129,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
               {...fieldAria("prod-name", errors.name)}
               autoFocus
               autoComplete="off"
-              placeholder={type === "PART" ? t("namePlaceholderPart") : t("namePlaceholder")}
+              placeholder={t(type === "PART" ? "namePlaceholderPart" : type === "PHONE" ? "namePlaceholderPhone" : "namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -161,7 +161,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
             </Field>
           </div>
           <Field label={t("category")} htmlFor="prod-category" optional>
-            <Input id="prod-category" list={listId} autoComplete="off" placeholder={t("categoryPlaceholder")} value={category} onChange={(e) => setCategory(e.target.value)} />
+            <Input id="prod-category" list={listId} autoComplete="off" placeholder={t(type === "PHONE" ? "categoryPlaceholderPhone" : "categoryPlaceholder")} value={category} onChange={(e) => setCategory(e.target.value)} />
             <datalist id={listId}>
               {categories.map((c) => (
                 <option key={c} value={c} />

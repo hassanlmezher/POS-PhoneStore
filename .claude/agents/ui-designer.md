@@ -40,3 +40,6 @@ Before starting, read `CLAUDE.md` (conventions, shared components list) and only
 2. Build it with shadcn/ui components and Tailwind.
 3. Check it at desktop, tablet and phone widths and in RTL (switch the locale to Arabic).
 4. Report back briefly: files changed, new shared components, anything left open.
+
+## Always check your work
+After every change, screenshot each affected screen and state (dialogs, new form parts) in English and Arabic, at desktop and phone width (375px). If anything looks broken (misaligned, overflowing, cramped, cut off, sideways scroll), fix it yourself and check again before reporting.
