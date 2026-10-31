@@ -59,6 +59,8 @@ function Row({ r, canEdit, rate, rounding }: { r: HistoryRow; canEdit: boolean; 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const purchase = r.kind === "purchase";
+  // Money back from the supplier is stored as a negative payment.
+  const back = !purchase && r.usdCents < 0;
   const Icon = purchase ? PackagePlus : HandCoins;
 
   function remove() {
@@ -78,7 +80,7 @@ function Row({ r, canEdit, rate, rounding }: { r: HistoryRow; canEdit: boolean; 
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-medium">
-            {purchase ? t("purchase") : t("payment")}
+            {purchase ? t("purchase") : back ? t("moneyBack") : t("payment")}
             {purchase && r.reference && (
               <span className="ms-2 text-xs font-normal text-muted-foreground">
                 #<Ltr>{r.reference}</Ltr>
@@ -89,7 +91,7 @@ function Row({ r, canEdit, rate, rounding }: { r: HistoryRow; canEdit: boolean; 
             {format.dateTime(new Date(r.at), { dateStyle: "medium" })}
             {!purchase && ` · ${tm(r.method)}`}
             {!purchase && r.withPurchase && ` · ${t("paidWithPurchase")}`}
-            {!purchase && r.fromDrawer && ` · ${t("fromDrawerShort")}`}
+            {!purchase && r.fromDrawer && ` · ${t(back ? "intoDrawerShort" : "fromDrawerShort")}`}
           </p>
           {purchase && (
             <ul className="mt-1 text-sm text-muted-foreground">
@@ -112,8 +114,8 @@ function Row({ r, canEdit, rate, rounding }: { r: HistoryRow; canEdit: boolean; 
       </div>
       <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-1 rtl:sm:items-start">
         <span className={cn("text-sm font-semibold tabular-nums", purchase ? "" : "text-success")} dir="ltr">
-          {purchase ? "+" : "−"}
-          {!purchase && r.currency === "LBP" ? formatMoney(r.amount, "LBP") : formatMoney(r.usdCents, "USD")}
+          {purchase || back ? "+" : "−"}
+          {!purchase && r.currency === "LBP" ? formatMoney(Math.abs(r.amount), "LBP") : formatMoney(Math.abs(r.usdCents), "USD")}
         </span>
         <span className="text-xs text-muted-foreground">
           {t("owedAfter")} <Money usdCents={r.balanceAfter} rate={rate} rounding={rounding} layout="inline" className="text-xs" lbpClassName="hidden" />

@@ -21,10 +21,12 @@ type Props = {
   rounding: number;
   label: string;
   optional?: boolean;
+  /** Money coming back from the supplier: the drawer switch puts it in. */
+  refund?: boolean;
 };
 
 /** Amount (USD/LBP) + method + "from the cash drawer", shared by "Pay supplier" and "paid now" on a purchase. */
-export function PayFields({ idPrefix, value: v, onChange, error, drawerOpen, rate, rounding, label, optional }: Props) {
+export function PayFields({ idPrefix, value: v, onChange, error, drawerOpen, rate, rounding, label, optional, refund }: Props) {
   const t = useTranslations("suppliers");
   const tm = useTranslations("paymentMethods");
   const set = <K extends keyof PayState>(k: K, val: PayState[K]) => onChange({ ...v, [k]: val });
@@ -51,7 +53,7 @@ export function PayFields({ idPrefix, value: v, onChange, error, drawerOpen, rat
           className="mb-6"
         />
       </div>
-      <Field label={t("method")} htmlFor={`${idPrefix}-method`}>
+      <Field label={t(refund ? "receivedWith" : "method")} htmlFor={`${idPrefix}-method`}>
         <NativeSelect id={`${idPrefix}-method`} value={v.method} onChange={(e) => set("method", e.target.value as PayState["method"])}>
           {PAY_METHODS.map((m) => (
             <option key={m} value={m}>
@@ -64,8 +66,8 @@ export function PayFields({ idPrefix, value: v, onChange, error, drawerOpen, rat
         <label className="flex items-start gap-3 rounded-lg border p-3">
           <Switch checked={v.fromDrawer && drawerOpen} onCheckedChange={(c) => set("fromDrawer", c)} disabled={!drawerOpen} className="mt-0.5" />
           <span className="text-sm">
-            <span className="block font-medium">{t("fromDrawer")}</span>
-            <span className="text-muted-foreground">{drawerOpen ? t("fromDrawerHint") : t("fromDrawerClosed")}</span>
+            <span className="block font-medium">{t(refund ? "intoDrawer" : "fromDrawer")}</span>
+            <span className="text-muted-foreground">{drawerOpen ? t(refund ? "intoDrawerHint" : "fromDrawerHint") : t("fromDrawerClosed")}</span>
           </span>
         </label>
       )}

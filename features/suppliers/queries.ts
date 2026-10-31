@@ -65,8 +65,8 @@ export async function supplierDetail(ctx: ShopContext, id: string) {
 }
 
 /**
- * "What to order": low-stock products, the ones last bought from this supplier first,
- * with a suggested quantity (back up to twice the alert level).
+ * "What to order": low-stock products, least in stock first (the ones bought from this supplier
+ * are marked), with a suggested quantity (back up to twice the alert level).
  */
 export async function reorderList(ctx: ShopContext, supplierId: string) {
   const [low, fromHere] = await Promise.all([
@@ -77,8 +77,6 @@ export async function reorderList(ctx: ShopContext, supplierId: string) {
     ctx.db.purchaseItem.findMany({ where: { purchase: { supplierId } }, select: { productId: true }, distinct: ["productId"] }),
   ]);
   const mine = new Set(fromHere.map((r) => r.productId));
-  return low
-    .map((p) => ({ id: p.id, name: p.name, qty: p.qty, suggested: suggestQty(p.qty, p.threshold), fromSupplier: mine.has(p.id) }))
-    .sort((a, b) => Number(b.fromSupplier) - Number(a.fromSupplier));
+  return low.map((p) => ({ id: p.id, name: p.name, qty: p.qty, suggested: suggestQty(p.qty, p.threshold), fromSupplier: mine.has(p.id) }));
 }
 export type ReorderRow = Awaited<ReturnType<typeof reorderList>>[number];

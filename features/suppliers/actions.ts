@@ -3,7 +3,7 @@
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import type { Prisma } from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { localNoon } from "@/lib/dates";
 import { lockRows } from "@/lib/locks";
 import { toUsdCents } from "@/lib/money";
@@ -47,17 +47,21 @@ export async function saveSupplier(input: SupplierInput, id?: string): Promise<R
 
 type Pay = z.output<typeof payInput>;
 
-/** Writes a supplier payment (and its drawer pay-out when paid in cash from the drawer). */
+/**
+ * Writes a supplier payment (and its drawer pay-out when paid in cash from the drawer).
+ * Money back from the supplier is a negative payment and goes into the drawer instead.
+ */
 async function writePayment(tx: Prisma.TransactionClient, ctx: ShopContext, supplier: { id: string; name: string }, p: Pay, purchaseId: string | null) {
   const shopId = ctx.shop.id;
   let cashMovementId: string | null = null;
+  const sign = p.refund ? -1 : 1;
   if (p.fromDrawer) {
     const session = await tx.cashSession.findFirst({ where: { shopId, closedAt: null }, select: { id: true } });
     if (!session) return false;
     await lockRows(tx, "CashSession", shopId, [session.id]);
     const t = await getTranslations("suppliers");
     const mv = await tx.cashMovement.create({
-      data: { shopId, cashSessionId: session.id, type: "PAY_OUT", currency: p.currency, amount: p.amount, reason: t("drawerReason", { name: supplier.name }).slice(0, 200), userId: ctx.user.id },
+      data: { shopId, cashSessionId: session.id, type: p.refund ? "PAY_IN" : "PAY_OUT", currency: p.currency, amount: p.amount, reason: t(p.refund ? "drawerRefundReason" : "drawerReason", { name: supplier.name }).slice(0, 200), userId: ctx.user.id },
     });
     cashMovementId = mv.id;
   }
@@ -68,9 +72,9 @@ async function writePayment(tx: Prisma.TransactionClient, ctx: ShopContext, supp
       purchaseId,
       method: p.method,
       currency: p.currency,
-      amount: p.amount,
+      amount: sign * p.amount,
       rate: ctx.shop.exchangeRate,
-      usdCentsEquivalent: toUsdCents(p.amount, p.currency, ctx.shop.exchangeRate),
+      usdCentsEquivalent: sign * toUsdCents(p.amount, p.currency, ctx.shop.exchangeRate),
       paidAt: localNoon(p.day, ctx.shop.timezone),
       note: p.note,
       cashMovementId,
@@ -81,6 +85,11 @@ async function writePayment(tx: Prisma.TransactionClient, ctx: ShopContext, supp
 }
 
 class NoDrawer extends Error {}
+class DuplicateBarcode extends Error {
+  constructor(public line: number) {
+    super();
+  }
+}
 
 /**
  * Records stock bought from a supplier: every line goes into stock (RESTOCK) and the product's cost
@@ -94,7 +103,8 @@ export async function createPurchase(input: PurchaseInput): Promise<Result<{ id:
   const shopId = ctx.shop.id;
   const supplier = await ctx.db.supplier.findFirst({ where: { id: v.supplierId }, select: { id: true, name: true } });
   if (!supplier) return { ok: false, error: "notFound" };
-  const productIds = [...new Set(v.items.map((i) => i.productId))];
+  if (v.paid?.refund) return { ok: false, error: "invalid" };
+  const productIds = [...new Set(v.items.flatMap((i) => (i.productId ? [i.productId] : [])))];
   const products = await ctx.db.product.findMany({ where: { id: { in: productIds } }, select: { id: true } });
   if (products.length !== productIds.length) return { ok: false, error: "invalid" };
   const t = await getTranslations("suppliers");
@@ -102,6 +112,21 @@ export async function createPurchase(input: PurchaseInput): Promise<Result<{ id:
   try {
     const id = await prisma.$transaction(async (tx) => {
       const total = v.items.reduce((s, i) => s + i.qty * i.unitCostUsdCents, 0);
+      // New products are created first (no stock, no cost); the restock below sets both.
+      const ids: string[] = [];
+      for (const [n, i] of v.items.entries()) {
+        if (i.productId) {
+          ids.push(i.productId);
+          continue;
+        }
+        const np = i.newProduct!;
+        if (np.barcode && (await tx.product.findFirst({ where: { shopId, barcode: np.barcode }, select: { id: true } }))) throw new DuplicateBarcode(n);
+        const created = await tx.product.create({
+          data: { shopId, type: np.type, name: np.name, category: np.category, barcode: np.barcode, priceUsdCents: np.priceUsdCents, costUsdCents: 0, qty: 0 },
+          select: { id: true },
+        });
+        ids.push(created.id);
+      }
       const purchase = await tx.purchase.create({
         data: {
           shopId,
@@ -111,11 +136,12 @@ export async function createPurchase(input: PurchaseInput): Promise<Result<{ id:
           totalUsdCents: total,
           purchasedAt: localNoon(v.day, ctx.shop.timezone),
           userId: ctx.user.id,
-          items: { create: v.items.map((i) => ({ shopId, productId: i.productId, qty: i.qty, unitCostUsdCents: i.unitCostUsdCents })) },
+          items: { create: v.items.map((i, n) => ({ shopId, productId: ids[n], qty: i.qty, unitCostUsdCents: i.unitCostUsdCents })) },
         },
         select: { id: true },
       });
-      for (const i of v.items) {
+      for (const [n, item] of v.items.entries()) {
+        const i = { ...item, productId: ids[n] };
         // Row lock on the product so two purchases at once both count in the average.
         await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${i.productId} AND "shopId" = ${shopId} FOR UPDATE`;
         const p = await tx.product.findUniqueOrThrow({ where: { id: i.productId, shopId }, select: { qty: true, costUsdCents: true } });
@@ -129,6 +155,8 @@ export async function createPurchase(input: PurchaseInput): Promise<Result<{ id:
     return { ok: true, id };
   } catch (e) {
     if (e instanceof NoDrawer) return { ok: false, error: "noOpenDrawer" };
+    if (e instanceof DuplicateBarcode) return { ok: false, error: "invalid", fieldErrors: { [`items.${e.line}.newProduct.barcode`]: "duplicate" } };
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { ok: false, error: "invalid", fieldErrors: { items: "duplicate" } };
     throw e;
   }
 }

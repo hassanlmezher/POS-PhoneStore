@@ -27,8 +27,10 @@ export const payInput = z
     method: z.enum(PAY_METHODS),
     day: z.string().refine(isDayKey, "invalidDate"),
     note: optionalText(300),
-    /** Cash only: also take it out of the open drawer. */
+    /** Cash only: also take it out of the open drawer (or put it in, for money back). */
     fromDrawer: z.boolean().optional(),
+    /** Money the supplier gives back (when they owe the shop): stored as a negative payment. */
+    refund: z.boolean().optional(),
   })
   .transform((v, ctx) => {
     const amount = parseMoney(v.amount, v.currency);
@@ -36,9 +38,27 @@ export const payInput = z
       ctx.addIssue({ code: "custom", path: ["amount"], message: "invalidAmount" });
       return z.NEVER;
     }
-    return { ...v, amount, fromDrawer: v.method === "CASH" && !!v.fromDrawer };
+    return { ...v, amount, fromDrawer: v.method === "CASH" && !!v.fromDrawer, refund: !!v.refund };
   });
 export type PayInput = z.input<typeof payInput>;
+
+/** A product that is not in stock yet, created by the purchase (cost and quantity come from the line). */
+const newProductInput = z
+  .object({
+    type: z.enum(["ACCESSORY", "PART"]),
+    name: z.string().trim().min(1, "required").max(150),
+    category: optionalText(60),
+    barcode: optionalText(60),
+    price: z.string().trim().min(1, "required"),
+  })
+  .transform((v, ctx) => {
+    const price = parseMoney(v.price, "USD");
+    if (price === null) {
+      ctx.addIssue({ code: "custom", path: ["price"], message: "invalidAmount" });
+      return z.NEVER;
+    }
+    return { type: v.type, name: v.name, category: v.category, barcode: v.barcode, priceUsdCents: price };
+  });
 
 export const purchaseInput = z.object({
   supplierId: z.string().min(1).max(64),
@@ -49,7 +69,9 @@ export const purchaseInput = z.object({
     .array(
       z
         .object({
-          productId: z.string().min(1).max(64),
+          /** An existing product, or `newProduct` to create it with this purchase. */
+          productId: z.string().min(1).max(64).optional(),
+          newProduct: newProductInput.optional(),
           qty: z.coerce.number().int().min(1, "invalidQty").max(9999, "invalidQty"),
           unitCost: z.string().trim().min(1, "required"),
         })
@@ -59,7 +81,11 @@ export const purchaseInput = z.object({
             ctx.addIssue({ code: "custom", path: ["unitCost"], message: "invalidAmount" });
             return z.NEVER;
           }
-          return { productId: v.productId, qty: v.qty, unitCostUsdCents: c };
+          if (!v.productId && !v.newProduct) {
+            ctx.addIssue({ code: "custom", path: ["productId"], message: "required" });
+            return z.NEVER;
+          }
+          return { productId: v.productId ?? null, newProduct: v.productId ? null : (v.newProduct ?? null), qty: v.qty, unitCostUsdCents: c };
         }),
     )
     .min(1, "noItems")
