@@ -184,6 +184,8 @@ model Shop {
   subscriptionPayments SubscriptionPayment[]
   auditLogs            AuditLog[]
   presets              ShopPreset[]
+  installmentPlans     InstallmentPlan[]
+  installments         Installment[]
   logo                 ShopLogo?
 }
 
@@ -305,6 +307,7 @@ model User {
   partOrders       PartOrder[]
   purchases        Purchase[]
   supplierPayments SupplierPayment[]
+  installmentPlans InstallmentPlan[]
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -372,9 +375,10 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  shop    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  tickets Ticket[]
-  sales   Sale[]
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tickets          Ticket[]
+  sales            Sale[]
+  installmentPlans InstallmentPlan[]
 
   @@unique([shopId, phone])
   @@index([shopId, name])
@@ -464,21 +468,22 @@ model Ticket {
   trackToken       String       @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   updatedAt        DateTime     @updatedAt
 
-  shop        Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  customer    Customer          @relation(fields: [customerId], references: [id])
-  deviceModel DeviceModel?      @relation(fields: [deviceModelId], references: [id])
-  assignedTo  User?             @relation("assignedTo", fields: [assignedToId], references: [id])
-  comebackOf  Ticket?           @relation("comeback", fields: [comebackOfId], references: [id], onDelete: SetNull)
-  comebacks   Ticket[]          @relation("comeback")
-  media       TicketMedia[]
-  partOrders  PartOrder[]
-  createdBy   User              @relation("createdBy", fields: [createdById], references: [id])
-  items       TicketItem[]
-  statusLogs  TicketStatusLog[]
-  notes       TicketNote[]
-  approvals   PriceApproval[]
-  payments    Payment[]
-  saleItems   SaleItem[]
+  shop            Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  deviceModel     DeviceModel?      @relation(fields: [deviceModelId], references: [id])
+  assignedTo      User?             @relation("assignedTo", fields: [assignedToId], references: [id])
+  comebackOf      Ticket?           @relation("comeback", fields: [comebackOfId], references: [id], onDelete: SetNull)
+  comebacks       Ticket[]          @relation("comeback")
+  media           TicketMedia[]
+  partOrders      PartOrder[]
+  installmentPlan InstallmentPlan?
+  createdBy       User              @relation("createdBy", fields: [createdById], references: [id])
+  items           TicketItem[]
+  statusLogs      TicketStatusLog[]
+  notes           TicketNote[]
+  approvals       PriceApproval[]
+  payments        Payment[]
+  saleItems       SaleItem[]
 
   @@unique([shopId, number])
   @@index([shopId, status])
@@ -625,13 +630,14 @@ model Sale {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  customer       Customer?       @relation(fields: [customerId], references: [id])
-  cashier        User            @relation(fields: [cashierId], references: [id])
-  cashSession    CashSession?    @relation(fields: [cashSessionId], references: [id])
-  items          SaleItem[]
-  payments       Payment[]
-  stockMovements StockMovement[]
+  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  cashier         User             @relation(fields: [cashierId], references: [id])
+  cashSession     CashSession?     @relation(fields: [cashSessionId], references: [id])
+  items           SaleItem[]
+  payments        Payment[]
+  installmentPlan InstallmentPlan?
+  stockMovements  StockMovement[]
 
   @@unique([shopId, number])
   @@index([shopId, createdAt])
@@ -960,4 +966,47 @@ model PriceApproval {
 
   @@index([shopId, ticketId])
   @@index([shopId, status])
+}
+
+/// A sale or a repair paid in parts. Payments are the normal sale/ticket payments:
+/// what was paid after the plan started fills the parts in order.
+model InstallmentPlan {
+  id                 String   @id @default(cuid())
+  shopId             String
+  customerId         String
+  saleId             String?  @unique
+  ticketId           String?  @unique
+  /// What was left to pay when the plan was made (split into the parts).
+  totalUsdCents      Int
+  /// What was already paid on the sale/repair before the plan.
+  paidBeforeUsdCents Int
+  note               String?
+  userId             String
+  createdAt          DateTime @default(now())
+
+  shop     Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer Customer      @relation(fields: [customerId], references: [id])
+  sale     Sale?         @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  ticket   Ticket?       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id])
+  parts    Installment[]
+
+  @@index([shopId, customerId])
+}
+
+model Installment {
+  id             String    @id @default(cuid())
+  shopId         String
+  planId         String
+  number         Int
+  /// Local day the part is due, stored at local noon.
+  dueAt          DateTime
+  amountUsdCents Int
+  remindedAt     DateTime?
+
+  shop Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  plan InstallmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, number])
+  @@index([shopId, dueAt])
 }

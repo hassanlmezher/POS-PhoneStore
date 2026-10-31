@@ -561,7 +561,11 @@
     "moreThanOwed": "This is more than what is still owed.",
     "alreadyPaid": "This is already fully paid.",
     "tooMany": "Too many files.",
-    "noItems": "Add at least one product."
+    "noItems": "Add at least one product.",
+    "invalidParts": "Choose between 2 and 12 parts",
+    "tooSmall": "Too little left to split into that many parts",
+    "pastDate": "Pick today or a later day",
+    "needsCustomer": "Link a customer first: only a customer's sale or repair can be paid in parts"
   },
   "customers": {
     "title": "Customers",
@@ -612,7 +616,8 @@
     "paymentSaved": "Payment saved",
     "stillToPay": "Still to pay",
     "stillToPayHint": "When the customer pays, press Record payment. It is marked paid once nothing is left.",
-    "saleLabel": "Sale #{number}"
+    "saleLabel": "Sale #{number}",
+    "installments": "Installments"
   },
   "tickets": {
     "title": "Repairs",
@@ -2036,5 +2041,62 @@
     "noMatch": "No product matches.",
     "suggested": "Suggested: {count}",
     "qtyFor": "Quantity for {name}"
+  },
+  "installments": {
+    "title": "Installments",
+    "subtitle": "Sales and repairs paid in parts: what is late, what is due soon, and what is left.",
+    "statOpen": "Being paid",
+    "statLate": "With a late part",
+    "statOwed": "Still to collect",
+    "tabOpen": "Being paid",
+    "tabDone": "Paid off",
+    "emptyOpen": "No one is paying in parts",
+    "emptyDone": "No plan paid off yet",
+    "emptyBody": "Open a customer, find a sale or repair under \"Still to pay\", and press \"Pay in parts\".",
+    "saleLabel": "Sale #{number}",
+    "paidOff": "Paid off",
+    "left": "Left:",
+    "payInParts": "Pay in parts",
+    "change": "Change plan",
+    "dialogTitle": "Pay in parts: {label}",
+    "dialogHint": "Split the <m>{amount}</m> still owed into parts. Payments fill the parts in order.",
+    "dialogHintReplace": "The new plan replaces the old one and starts from the <m>{amount}</m> owed now.",
+    "parts": "Number of parts",
+    "fewer": "One part less",
+    "more": "One part more",
+    "firstDay": "First part due on",
+    "every": "Then every",
+    "everyOptions": {
+      "WEEK": "Week",
+      "TWO_WEEKS": "2 weeks",
+      "MONTH": "Month"
+    },
+    "preview": "The parts",
+    "note": "Note",
+    "notePlaceholder": "e.g. pays on the 1st, after salary",
+    "save": "Save plan",
+    "saved": "Plan saved",
+    "stopped": "Plan stopped: the rest is owed in one amount",
+    "progress": "{paid} of {count} paid",
+    "partN": "Part {n}",
+    "states": {
+      "paid": "Paid",
+      "late": "Late",
+      "today": "Due today",
+      "dueSoon": "Due soon",
+      "partial": "Part paid",
+      "later": "Coming"
+    },
+    "payPart": "Pay part {n}",
+    "remind": "Remind on WhatsApp",
+    "remindAgain": "Remind again",
+    "stop": "Stop plan",
+    "stopTitle": "Stop paying in parts?",
+    "stopBody": "The parts are removed. Nothing paid is lost; the rest is owed as one amount again.",
+    "waSale": "your purchase #{number}",
+    "waRepair": "the repair of your {device} ({ticket})",
+    "waDue": "Hello {customer}, this is {shop}.\nA friendly reminder: part {part} of {count} for {what} is due on {date}: {amount}.\nStill to pay in total: {left}.\nThank you!",
+    "waLate": "Hello {customer}, this is {shop}.\nPart {part} of {count} for {what} was due on {date}: {amount}.\nPlease pass by when you can. Still to pay in total: {left}.\nThank you!",
+    "payPartHint": "Part {n} (<m>{part}</m>) is filled in. Still to pay in total: <m>{left}</m>."
   }
 }

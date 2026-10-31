@@ -26,10 +26,16 @@ type Props = {
   rate: number;
   rounding: number;
   size?: "sm" | "default";
+  /** Amount filled in when the dialog opens (e.g. one installment); defaults to the full balance. */
+  prefillUsdCents?: number;
+  /** Button text instead of "Record payment". */
+  buttonLabel?: string;
+  /** Dialog text instead of "Still to pay … the full amount is filled in". */
+  hint?: React.ReactNode;
 };
 
 /** "Record payment" for money still owed on a sale or a repair. Prefilled with the full amount. */
-export function PayBalanceButton({ kind, id, label, balanceUsdCents, rate, rounding, size = "sm" }: Props) {
+export function PayBalanceButton({ kind, id, label, balanceUsdCents, rate, rounding, size = "sm", prefillUsdCents, buttonLabel, hint }: Props) {
   const t = useTranslations("customers");
   const te = useTranslations("errors");
   const tc = useTranslations("common");
@@ -43,11 +49,13 @@ export function PayBalanceButton({ kind, id, label, balanceUsdCents, rate, round
   const [reference, setReference] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const full = (c: "USD" | "LBP") => (c === "USD" ? (balanceUsdCents / 100).toFixed(2) : String(toLbp(balanceUsdCents, rate, rounding)));
+  const inCurrency = (usd: number, c: "USD" | "LBP") => (c === "USD" ? (usd / 100).toFixed(2) : String(toLbp(usd, rate, rounding)));
+  const full = (c: "USD" | "LBP") => inCurrency(balanceUsdCents, c);
+  const first = Math.min(prefillUsdCents ?? balanceUsdCents, balanceUsdCents);
 
   function start() {
     setCurrency("USD");
-    setAmount(full("USD"));
+    setAmount(inCurrency(first, "USD"));
     setMethod("CASH");
     setReference("");
     setErrors({});
@@ -78,14 +86,14 @@ export function PayBalanceButton({ kind, id, label, balanceUsdCents, rate, round
     <>
       <Button type="button" variant="outline" size={size} className={size === "sm" ? "h-10" : undefined} onClick={start}>
         <HandCoins />
-        {t("recordPayment")}
+        {buttonLabel ?? t("recordPayment")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("payTitle", { label })}</DialogTitle>
             <DialogDescription>
-              {t.rich("payHint", { amount: formatMoney(balanceUsdCents, "USD"), m: (c) => <bdi dir="ltr">{c}</bdi> })}
+              {hint ?? t.rich("payHint", { amount: formatMoney(balanceUsdCents, "USD"), m: (c) => <bdi dir="ltr">{c}</bdi> })}
             </DialogDescription>
           </DialogHeader>
           <form id={`pay-${id}`} onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -107,7 +115,7 @@ export function PayBalanceButton({ kind, id, label, balanceUsdCents, rate, round
                 value={currency}
                 onValueChange={(c) => {
                   setCurrency(c);
-                  setAmount(full(c));
+                  setAmount(inCurrency(first, c));
                 }}
                 options={[
                   { value: "USD", label: "USD" },

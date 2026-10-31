@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ChevronRight, Plus, SearchX, Users } from "lucide-react";
+import { CalendarClock, ChevronRight, Plus, SearchX, Users } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Ltr } from "@/components/ltr";
 import { PageHeader } from "@/components/page-header";
@@ -8,6 +8,8 @@ import { Pagination } from "@/components/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UrlSearchInput } from "@/components/url-search-input";
 import { listCustomers } from "@/features/customers/queries";
+import { countDuePlans } from "@/features/installments/queries";
+import { Button } from "@/components/ui/button";
 import { CustomerDialogButton } from "@/features/customers/ui/customer-dialog";
 import { can } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
@@ -16,12 +18,13 @@ import { requireShop } from "@/lib/tenant";
 export default async function CustomersPage({ params, searchParams }: PageProps<"/shop/[slug]/customers">) {
   const { slug } = await params;
   const sp = await searchParams;
-  const { db, shop, user, readOnly } = await requireShop(slug);
+  const ctx = await requireShop(slug);
+  const { db, shop, user, readOnly } = ctx;
   const t = await getTranslations("customers");
   const format = await getFormatter();
   const q = typeof sp.q === "string" ? sp.q : "";
   const page = Math.max(1, Number(sp.page) || 1);
-  const { rows, total, pageSize } = await listCustomers(db, { q, page });
+  const [{ rows, total, pageSize }, duePlans] = await Promise.all([listCustomers(db, { q, page }), countDuePlans(ctx)]);
   const canAdd = can(user.role, "tickets.create") && !readOnly;
 
   return (
@@ -30,12 +33,21 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
         title={t("title")}
         description={t("subtitle", { count: total })}
         actions={
-          canAdd && (
-            <CustomerDialogButton>
-              <Plus />
-              {t("add")}
-            </CustomerDialogButton>
-          )
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/customers/installments">
+                <CalendarClock />
+                {t("installments")}
+                {duePlans > 0 && <span className="rounded-full bg-warning-soft px-2 text-xs leading-5 text-warning tabular-nums">{duePlans}</span>}
+              </Link>
+            </Button>
+            {canAdd && (
+              <CustomerDialogButton>
+                <Plus />
+                {t("add")}
+              </CustomerDialogButton>
+            )}
+          </>
         }
       />
 

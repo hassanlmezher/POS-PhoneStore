@@ -20,12 +20,18 @@ import { formatTicketNumber } from "@/lib/numbering";
 import { can } from "@/lib/permissions";
 import { formatPhone, waNumber } from "@/lib/phone";
 import { requireShop } from "@/lib/tenant";
+import { dayKey } from "@/lib/dates";
+import { customerPlans } from "@/features/installments/queries";
+import { PlanButton } from "@/features/installments/ui/plan-dialog";
+import { PlanParts } from "@/features/installments/ui/plan-parts";
 
 export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/customers/[id]">) {
   const { slug, id } = await params;
-  const { db, shop, user, readOnly } = await requireShop(slug);
-  const customer = await getCustomer(db, id);
+  const ctx = await requireShop(slug);
+  const { db, shop, user, readOnly } = ctx;
+  const [customer, plans] = await Promise.all([getCustomer(db, id), customerPlans(ctx, id)]);
   if (!customer) notFound();
+  const today = dayKey(new Date(), shop.timezone);
   const t = await getTranslations("customers");
   const tc = await getTranslations("common");
   const format = await getFormatter();
@@ -138,26 +144,39 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
           <ul className="divide-y">
             {unpaid.map((u) => {
               const canPay = u.kind === "sale" ? canPaySale : canPayTicket;
+              const plan = plans.get(`${u.kind}:${u.id}`);
               return (
-                <li key={u.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      {u.kind === "sale" ? <ShoppingBag aria-hidden className="size-4" /> : <Wrench aria-hidden className="size-4" />}
-                    </span>
-                    <div className="min-w-0">
-                      <Link href={u.href} className="font-semibold hover:underline">
-                        <Ltr>{u.label}</Ltr>
-                      </Link>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {u.detail} · {format.dateTime(u.date, { dateStyle: "medium" })}
-                      </p>
+                <li key={u.id} className="flex flex-col gap-3 px-4 py-3 sm:px-6">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        {u.kind === "sale" ? <ShoppingBag aria-hidden className="size-4" /> : <Wrench aria-hidden className="size-4" />}
+                      </span>
+                      <div className="min-w-0">
+                        <Link href={u.href} className="font-semibold whitespace-nowrap hover:underline">
+                          <Ltr>{u.label}</Ltr>
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          <bdi>{u.detail}</bdi> · <bdi>{format.dateTime(u.date, { dateStyle: "medium" })}</bdi>
+                        </p>
+                      </div>
+                      {u.status && <StatusBadge status={u.status} />}
                     </div>
-                    {u.status && <StatusBadge status={u.status} />}
+                    <div className="flex flex-wrap items-center justify-between gap-3 xl:justify-end">
+                      <Money usdCents={u.balance} rate={rate} rounding={shop.lbpRounding} layout="inline" className="text-sm whitespace-nowrap" usdClassName="font-semibold text-warning" />
+                      {canPay && !plan && (
+                        <div className="flex flex-wrap gap-2">
+                          <PlanButton kind={u.kind} id={u.id} label={u.label} balanceUsdCents={u.balance} rate={rate} rounding={shop.lbpRounding} today={today} />
+                          <PayBalanceButton kind={u.kind} id={u.id} label={u.label} balanceUsdCents={u.balance} rate={rate} rounding={shop.lbpRounding} />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between gap-3 sm:justify-end">
-                    <Money usdCents={u.balance} rate={rate} rounding={shop.lbpRounding} layout="inline" className="text-sm whitespace-nowrap" usdClassName="font-semibold text-warning" />
-                    {canPay && <PayBalanceButton kind={u.kind} id={u.id} label={u.label} balanceUsdCents={u.balance} rate={rate} rounding={shop.lbpRounding} />}
-                  </div>
+                  {plan && (
+                    <div className="rounded-lg border bg-muted/30 p-3 xl:ms-12">
+                      <PlanParts plan={plan} canPay={canPay} rate={rate} rounding={shop.lbpRounding} today={today} payLabel={u.label} />
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -195,16 +214,16 @@ export default async function CustomerPage({ params }: PageProps<"/shop/[slug]/c
                 <li key={tk.id}>
                   <Link
                     href={`/tickets/${tk.number}`}
-                    className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4 sm:px-6"
+                    className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/40 sm:px-6 xl:flex-row xl:items-center xl:gap-4"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <Ltr className="w-20 shrink-0 font-semibold">{label}</Ltr>
                       <div className="min-w-0">
-                        <p className="truncate font-medium">{deviceName(tk)}</p>
-                        <p className="truncate text-xs text-muted-foreground">{tk.problem}</p>
+                        <p dir="auto" className="truncate font-medium rtl:text-right">{deviceName(tk)}</p>
+                        <p dir="auto" className="truncate text-xs text-muted-foreground rtl:text-right">{tk.problem}</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <div className="flex flex-wrap items-center gap-2 ps-[5.75rem] xl:justify-end xl:ps-0">
                       <StatusBadge status={tk.status} />
                       <WarrantyBadge until={warrantyUntil(tk)} />
                       <span className="text-xs text-muted-foreground">{format.dateTime(tk.createdAt, { dateStyle: "medium" })}</span>

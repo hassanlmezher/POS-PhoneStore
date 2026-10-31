@@ -5,6 +5,8 @@ import { prisma as defaultClient } from "@/lib/db";
 export async function deleteShopData(shopId: string, prisma: PrismaClient = defaultClient as unknown as PrismaClient) {
   const where = { shopId };
   await prisma.$transaction([
+    prisma.installment.deleteMany({ where }),
+    prisma.installmentPlan.deleteMany({ where }),
     prisma.payment.deleteMany({ where }),
     prisma.stockMovement.deleteMany({ where }),
     prisma.saleItem.deleteMany({ where }),

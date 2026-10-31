@@ -13,7 +13,7 @@ const AREAS = {
     ...BASE,
     "nav", "roles", "search", "pattern", "status", "ticket", "tickets", "intake", "accessories", "pos", "cash",
     "inventory", "product", "productTypes", "movementReasons", "customers", "sales", "reports", "settings",
-    "templates", "paymentMethods", "stock", "warranty", "dashboard", "approval", "pickup", "expenses", "prices", "followups", "comebacks", "checkin", "partOrders", "suppliers",
+    "templates", "paymentMethods", "stock", "warranty", "dashboard", "approval", "pickup", "expenses", "prices", "followups", "comebacks", "checkin", "partOrders", "suppliers", "installments",
   ],
   track: [...BASE, "track", "status"],
   approve: [...BASE, "approval"],
