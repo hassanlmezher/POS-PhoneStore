@@ -2097,6 +2097,10 @@
     "waRepair": "تصليح {device} ({ticket})",
     "waDue": "مرحباً {customer}، معك {shop}.\nتذكير لطيف: الدفعة {part} من {count} عن {what} تستحق يوم {date}: {amount}.\nالمتبقي الإجمالي: {left}.\nشكراً لك!",
     "waLate": "مرحباً {customer}، معك {shop}.\nالدفعة {part} من {count} عن {what} كانت مستحقة يوم {date}: {amount}.\nنرجو المرور عندما تستطيع. المتبقي الإجمالي: {left}.\nشكراً لك!",
-    "payPartHint": "تمّت تعبئة الدفعة {n} (<m>{part}</m>). المتبقي الإجمالي: <m>{left}</m>."
+    "payPartHint": "تمّت تعبئة الدفعة {n} (<m>{part}</m>). المتبقي الإجمالي: <m>{left}</m>.",
+    "search": "ابحث في التقسيط",
+    "searchPlaceholder": "الاسم، الهاتف، التذكرة أو رقم البيع",
+    "noResults": "لا نتيجة",
+    "noResultsBody": "لا أحد يدفع على دفعات يطابق \"{q}\"."
   }
 }

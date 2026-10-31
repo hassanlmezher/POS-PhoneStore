@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { AlarmClock, CalendarCheck, CalendarClock, ChevronRight, ShoppingBag, Wallet, Wrench } from "lucide-react";
+import { AlarmClock, CalendarCheck, CalendarClock, ChevronRight, SearchX, ShoppingBag, Wallet, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { LinkTabs } from "@/components/link-tabs";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { StatTile } from "@/components/stat-tile";
-import { listPlans } from "@/features/installments/queries";
+import { UrlSearchInput } from "@/components/url-search-input";
+import { listPlans, matchPlan } from "@/features/installments/queries";
 import { PlanParts } from "@/features/installments/ui/plan-parts";
 import { dayKey } from "@/lib/dates";
 import { can } from "@/lib/permissions";
@@ -25,9 +26,11 @@ export default async function InstallmentsPage({ params, searchParams }: PagePro
   const ctx = await requireShop(slug);
   const { shop, user, readOnly } = ctx;
   const view = sp.view === "done" ? "done" : "open";
+  const q = typeof sp.q === "string" ? sp.q.slice(0, 60) : "";
   const [t, tc, all] = await Promise.all([getTranslations("installments"), getTranslations("customers"), listPlans(ctx)]);
   const open = all.filter((p) => !p.done);
-  const rows = view === "done" ? all.filter((p) => p.done) : open;
+  const rows = (view === "done" ? all.filter((p) => p.done) : open).filter((p) => matchPlan(p, q));
+  const withQ = (href: string) => (q ? `${href}${href.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : href);
   const late = open.filter((p) => p.next?.state === "late").length;
   const owed = open.reduce((s, p) => s + p.owedUsdCents, 0);
   const today = dayKey(new Date(), shop.timezone);
@@ -41,30 +44,41 @@ export default async function InstallmentsPage({ params, searchParams }: PagePro
           {tc("title")}
         </Link>
       </nav>
-      <PageHeader title={t("title")} description={t("subtitle")} />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <StatTile icon={CalendarClock} label={t("statOpen")}>
-          {open.length}
-        </StatTile>
-        <StatTile icon={AlarmClock} label={t("statLate")} tone={late ? "warning" : "default"}>
-          {late}
-        </StatTile>
-        <div className="col-span-2 sm:col-span-1">
-          <StatTile icon={Wallet} label={t("statOwed")}>
-            <Money usdCents={owed} rate={rate} rounding={shop.lbpRounding} lbpClassName="text-sm" />
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={<UrlSearchInput basePath="/customers/installments" label={t("search")} placeholder={t("searchPlaceholder")} className="w-full sm:w-72" />}
+      />
+      {/* While searching, results come first. */}
+      {!q && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+          <StatTile icon={CalendarClock} label={t("statOpen")}>
+            {open.length}
           </StatTile>
+          <StatTile icon={AlarmClock} label={t("statLate")} tone={late ? "warning" : "default"}>
+            {late}
+          </StatTile>
+          <div className="col-span-2 sm:col-span-1">
+            <StatTile icon={Wallet} label={t("statOwed")}>
+              <Money usdCents={owed} rate={rate} rounding={shop.lbpRounding} lbpClassName="text-sm" />
+            </StatTile>
+          </div>
         </div>
-      </div>
+      )}
       <LinkTabs
         label={t("title")}
         items={[
-          { href: "/customers/installments", label: t("tabOpen"), active: view === "open", count: open.length },
-          { href: "/customers/installments?view=done", label: t("tabDone"), active: view === "done" },
+          { href: withQ("/customers/installments"), label: t("tabOpen"), active: view === "open", count: open.length },
+          { href: withQ("/customers/installments?view=done"), label: t("tabDone"), active: view === "done" },
         ]}
       />
       {rows.length === 0 ? (
         <div className="rounded-xl border bg-card shadow-card">
-          <EmptyState icon={view === "open" ? CalendarClock : CalendarCheck} title={t(view === "open" ? "emptyOpen" : "emptyDone")} body={t("emptyBody")} />
+          {q ? (
+            <EmptyState icon={SearchX} title={t("noResults")} body={t("noResultsBody", { q })} />
+          ) : (
+            <EmptyState icon={view === "open" ? CalendarClock : CalendarCheck} title={t(view === "open" ? "emptyOpen" : "emptyDone")} body={t("emptyBody")} />
+          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-3">

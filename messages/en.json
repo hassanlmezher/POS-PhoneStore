@@ -2097,6 +2097,10 @@
     "waRepair": "the repair of your {device} ({ticket})",
     "waDue": "Hello {customer}, this is {shop}.\nA friendly reminder: part {part} of {count} for {what} is due on {date}: {amount}.\nStill to pay in total: {left}.\nThank you!",
     "waLate": "Hello {customer}, this is {shop}.\nPart {part} of {count} for {what} was due on {date}: {amount}.\nPlease pass by when you can. Still to pay in total: {left}.\nThank you!",
-    "payPartHint": "Part {n} (<m>{part}</m>) is filled in. Still to pay in total: <m>{left}</m>."
+    "payPartHint": "Part {n} (<m>{part}</m>) is filled in. Still to pay in total: <m>{left}</m>.",
+    "search": "Search installments",
+    "searchPlaceholder": "Name, phone, ticket or sale #",
+    "noResults": "No match",
+    "noResultsBody": "Nobody paying in parts matches \"{q}\"."
   }
 }

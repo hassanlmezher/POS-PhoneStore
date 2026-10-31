@@ -5,6 +5,7 @@ import { dayKey } from "@/lib/dates";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { formatMoney, toLbp } from "@/lib/money";
 import { formatTicketNumber } from "@/lib/numbering";
+import { phoneSearchDigits } from "@/lib/phone";
 import type { ShopContext } from "@/lib/tenant";
 import { waLink } from "@/lib/whatsapp";
 import { saleMoneySelect, saleOwed, ticketMoneySelect, ticketOwed } from "./owed";
@@ -83,7 +84,7 @@ async function toRows(ctx: ShopContext, plans: PlanData[]) {
         label: p.sale ? `#${p.sale.number}` : formatTicketNumber(shop.ticketPrefix, p.ticket!.number),
         href: p.sale ? `/sales/${p.sale.number}` : `/tickets/${p.ticket!.number}`,
         detail: p.ticket ? deviceName(p.ticket) : null,
-        customer: { id: p.customer.id, name: p.customer.name },
+        customer: { id: p.customer.id, name: p.customer.name, phone: p.customer.phone },
         totalUsdCents: p.totalUsdCents,
         owedUsdCents: money.balanceUsdCents,
         done,
@@ -97,6 +98,19 @@ async function toRows(ctx: ShopContext, plans: PlanData[]) {
   });
 }
 export type PlanRow = Awaited<ReturnType<typeof toRows>>[number];
+
+/** Search by customer name, phone, ticket label or sale number. */
+export function matchPlan(p: PlanRow, q: string) {
+  const term = q.trim().toLowerCase();
+  if (!term) return true;
+  const digits = phoneSearchDigits(term);
+  return (
+    p.customer.name.toLowerCase().includes(term) ||
+    p.label.toLowerCase().includes(term) ||
+    String(p.number) === term.replace(/^#/, "") ||
+    (digits.length >= 3 && !!p.customer.phone && p.customer.phone.replace(/\D/g, "").includes(digits))
+  );
+}
 
 /** Plans the user may see (technicians: their repairs only). */
 function visible(ctx: ShopContext): Prisma.InstallmentPlanWhereInput {
