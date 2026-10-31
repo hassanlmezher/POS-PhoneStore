@@ -1657,7 +1657,16 @@
     "failed": "Something went wrong. Please try again.",
     "questions": "Questions? Contact the shop",
     "whatsapp": "WhatsApp",
-    "call": "Call"
+    "call": "Call",
+    "toldYou": "Did the customer answer you in person or by phone?",
+    "saidYes": "He said yes",
+    "saidNo": "He said no",
+    "recordedApproved": "Saved: the customer approved the new price",
+    "recordedDeclined": "Saved: the customer declined",
+    "recordedBy": "Recorded in the shop by {name}",
+    "answeredByLink": "Answered by the customer through the link",
+    "timelineApprovedTold": "recorded that {customer} approved {price}",
+    "timelineDeclinedTold": "recorded that {customer} declined {price}"
   },
   "pickup": {
     "title": "Waiting for pickup",

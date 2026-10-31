@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CircleCheck, CircleX, Clock, Loader2, MessageCircle, Plus, Send } from "lucide-react";
+import { CircleCheck, CircleX, Clock, Loader2, MessageCircle, Plus, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
@@ -12,7 +12,7 @@ import { Money } from "@/components/money";
 import { MoneyInput } from "@/components/money-input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { cancelApproval, createApproval } from "@/features/approvals/actions";
+import { cancelApproval, createApproval, recordApprovalAnswer } from "@/features/approvals/actions";
 import { cn } from "@/lib/utils";
 
 export type ApprovalView = {
@@ -23,6 +23,8 @@ export type ApprovalView = {
   reason: string;
   sentAt: string;
   answeredAt: string | null;
+  /** Staff member who recorded the answer (told in person / by phone); null when answered by link. */
+  recordedBy: string | null;
   /** wa.me link and public page, only for a pending request. */
   waUrl?: string;
   link?: string;
@@ -77,6 +79,17 @@ export function ApprovalCard({ ticketId, current, canManage, defaultUsdCents, ra
       } catch {
         toast.error(t("saveFailed"));
       }
+    });
+  }
+
+  /** The customer answered in person or by phone. */
+  function record(decision: "APPROVE" | "DECLINE") {
+    if (!current) return;
+    startTransition(async () => {
+      const res = await recordApprovalAnswer(current.id, decision);
+      if (!res.ok) toast.error(t("saveFailed"));
+      else toast.success(t(res.status === "APPROVED" ? "recordedApproved" : res.status === "DECLINED" ? "recordedDeclined" : "noLonger"));
+      router.refresh();
     });
   }
 
@@ -158,6 +171,9 @@ export function ApprovalCard({ ticketId, current, canManage, defaultUsdCents, ra
             {t("sentAt", { time: current.sentAt })}
             {current.answeredAt && <> · {t("answeredAt", { time: current.answeredAt })}</>}
           </p>
+          {current.status !== "PENDING" && (
+            <p className="text-xs text-muted-foreground">{current.recordedBy ? t("recordedBy", { name: current.recordedBy }) : t("answeredByLink")}</p>
+          )}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">{t("askHint")}</p>
@@ -186,6 +202,22 @@ export function ApprovalCard({ ticketId, current, canManage, defaultUsdCents, ra
               />
             </div>
           )}
+        </div>
+      )}
+
+      {current?.status === "PENDING" && canManage && (
+        <div className="flex flex-col gap-2 rounded-lg border p-3">
+          <p className="text-xs font-medium text-muted-foreground">{t("toldYou")}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="border-success/40 text-success hover:bg-success-soft hover:text-success" disabled={pending} onClick={() => record("APPROVE")}>
+              <ThumbsUp />
+              {t("saidYes")}
+            </Button>
+            <Button variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive-soft hover:text-destructive" disabled={pending} onClick={() => record("DECLINE")}>
+              <ThumbsDown />
+              {t("saidNo")}
+            </Button>
+          </div>
         </div>
       )}
 

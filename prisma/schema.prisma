@@ -308,6 +308,7 @@ model User {
   purchases        Purchase[]
   supplierPayments SupplierPayment[]
   installmentPlans InstallmentPlan[]
+  approvalAnswers  PriceApproval[]   @relation("approvalAnswers")
   exchangeRatesSet ExchangeRate[]
   auditLogs        AuditLog[]
 
@@ -959,10 +960,13 @@ model PriceApproval {
   createdById      String
   createdAt        DateTime       @default(now())
   respondedAt      DateTime?
+  /// Staff member who recorded the customer's answer (told in person or by phone); null = answered by link.
+  answeredById     String?
 
-  shop      Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  createdBy User   @relation(fields: [createdById], references: [id])
+  shop       Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy  User   @relation(fields: [createdById], references: [id])
+  answeredBy User?  @relation("approvalAnswers", fields: [answeredById], references: [id], onDelete: SetNull)
 
   @@index([shopId, ticketId])
   @@index([shopId, status])

@@ -1657,7 +1657,16 @@
     "failed": "حدث خطأ. حاول مجدداً.",
     "questions": "لديك سؤال؟ تواصل مع المحل",
     "whatsapp": "واتساب",
-    "call": "اتصال"
+    "call": "اتصال",
+    "toldYou": "هل أجابك الزبون شخصياً أو عبر الهاتف؟",
+    "saidYes": "وافق",
+    "saidNo": "رفض",
+    "recordedApproved": "تم الحفظ: الزبون وافق على السعر الجديد",
+    "recordedDeclined": "تم الحفظ: الزبون رفض",
+    "recordedBy": "سُجّل في المحل بواسطة {name}",
+    "answeredByLink": "أجاب الزبون عبر الرابط",
+    "timelineApprovedTold": "سجّل أن {customer} وافق على {price}",
+    "timelineDeclinedTold": "سجّل أن {customer} رفض {price}"
   },
   "pickup": {
     "title": "بانتظار الاستلام",

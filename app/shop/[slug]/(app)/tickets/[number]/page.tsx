@@ -80,7 +80,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
     ctx.db.priceApproval.findMany({
       where: { ticketId: ticket.id, status: { not: "CANCELLED" } },
       orderBy: { createdAt: "desc" },
-      include: { createdBy: { select: { name: true } } },
+      include: { createdBy: { select: { name: true } }, answeredBy: { select: { name: true } } },
     }),
   ]);
 
@@ -119,6 +119,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
         reason: latest.reason,
         sentAt: dt(latest.createdAt),
         answeredAt: latest.respondedAt ? dt(latest.respondedAt) : null,
+        recordedBy: latest.answeredBy?.name ?? null,
         ...(latest.status === "PENDING" &&
           (await approvalWhatsApp(shop, ticket.customer, { number: ticket.number, device: ticket.device }, latest).then((w) => ({ waUrl: w.url, link: w.link })))),
       }
@@ -147,9 +148,11 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
       const answer: Entry = {
         id: `${a.id}-answer`,
         at: a.respondedAt,
-        who: ticket.customer.name,
+        who: a.answeredBy?.name ?? ticket.customer.name,
         kind: "approval",
-        text: tap(a.status === "APPROVED" ? "timelineApproved" : "timelineDeclined", { price }),
+        text: a.answeredBy
+          ? tap(a.status === "APPROVED" ? "timelineApprovedTold" : "timelineDeclinedTold", { price, customer: ticket.customer.name })
+          : tap(a.status === "APPROVED" ? "timelineApproved" : "timelineDeclined", { price }),
       };
       return [asked, answer];
     }),

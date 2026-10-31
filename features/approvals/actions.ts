@@ -87,38 +87,55 @@ export async function respondApproval(token: string, decision: "APPROVE" | "DECL
   const slug = await getRequestSlug();
   const shop = slug ? await getShopBySlug(slug) : null;
   if (!shop) return { ok: false, error: "notFound" };
+  return answer(shop.id, { token }, decision, null);
+}
 
-  const result = await prisma.$transaction(async (tx) => {
+/**
+ * Staff: the customer answered in person or by phone. Same effect as the customer's own answer by link
+ * (only a pending request; the first answer counts), and remembers who recorded it.
+ */
+export async function recordApprovalAnswer(approvalId: string, decision: "APPROVE" | "DECLINE"): Promise<ApprovalResult<{ status: string }>> {
+  const ctx = await requireActionShop("tickets.status");
+  if (typeof approvalId !== "string" || approvalId.length > 64 || (decision !== "APPROVE" && decision !== "DECLINE")) return { ok: false, error: "invalid" };
+  const visible = await ctx.db.priceApproval.findFirst({ where: { id: approvalId, ticket: ticketAccessWhere(ctx.user) }, select: { id: true } });
+  if (!visible) return { ok: false, error: "notFound" };
+  const res = await answer(ctx.shop.id, { id: approvalId }, decision, ctx.user.id);
+  refreshShop();
+  return res;
+}
+
+/** Applies an answer to a pending request: on approve the estimate becomes the new price and an early-stage repair waits for the part. */
+async function answer(shopId: string, which: { token: string } | { id: string }, decision: "APPROVE" | "DECLINE", staffId: string | null) {
+  return prisma.$transaction(async (tx) => {
     const approval = await tx.priceApproval.findFirst({
-      where: { token, shopId: shop.id },
+      where: { ...which, shopId },
       select: { id: true, status: true, ticketId: true, amountUsdCents: true, createdById: true },
     });
     if (!approval) return { ok: false as const, error: "notFound" };
-    await lockRows(tx, "Ticket", shop.id, [approval.ticketId]);
+    await lockRows(tx, "Ticket", shopId, [approval.ticketId]);
     const status = decision === "APPROVE" ? "APPROVED" : "DECLINED";
     const answered = await tx.priceApproval.updateMany({
       where: { id: approval.id, status: "PENDING" },
-      data: { status, respondedAt: new Date() },
+      data: { status, respondedAt: new Date(), answeredById: staffId },
     });
     if (answered.count === 0) {
       const now = await tx.priceApproval.findUniqueOrThrow({ where: { id: approval.id }, select: { status: true } });
       return { ok: true as const, status: now.status };
     }
     if (status === "APPROVED") {
-      const ticket = await tx.ticket.findUniqueOrThrow({ where: { id: approval.ticketId, shopId: shop.id }, select: { status: true } });
+      const ticket = await tx.ticket.findUniqueOrThrow({ where: { id: approval.ticketId, shopId }, select: { status: true } });
       // Approved extra work usually needs a new part, so the repair waits for it to be ordered.
       const moveOn = ticket.status === "RECEIVED" || ticket.status === "DIAGNOSING" || ticket.status === "REPAIRING";
       await tx.ticket.update({
-        where: { id: approval.ticketId, shopId: shop.id },
+        where: { id: approval.ticketId, shopId },
         data: { estimateUsdCents: approval.amountUsdCents, ...(moveOn && { status: "WAITING_PART" }) },
       });
       if (moveOn) {
         await tx.ticketStatusLog.create({
-          data: { shopId: shop.id, ticketId: approval.ticketId, from: ticket.status, to: "WAITING_PART", userId: approval.createdById, note: "@approvedByCustomer" },
+          data: { shopId, ticketId: approval.ticketId, from: ticket.status, to: "WAITING_PART", userId: staffId ?? approval.createdById, note: "@approvedByCustomer" },
         });
       }
     }
     return { ok: true as const, status };
   });
-  return result;
 }
