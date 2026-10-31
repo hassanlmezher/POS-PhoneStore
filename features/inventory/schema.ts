@@ -24,8 +24,11 @@ const usd = (required: boolean) =>
       return n ?? 0;
     });
 
+export const PRODUCT_TYPES = ["ACCESSORY", "PART", "PHONE"] as const;
+export type ProductTypeKey = (typeof PRODUCT_TYPES)[number];
+
 export const productInput = z.object({
-  type: z.enum(["ACCESSORY", "PART"]),
+  type: z.enum(PRODUCT_TYPES),
   name: z.string().trim().min(1, "required").max(150),
   sku: optionalText(60),
   barcode: optionalText(60),

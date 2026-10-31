@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Segmented } from "@/components/segmented";
 import { createPurchase, paySupplier, searchStock } from "@/features/suppliers/actions";
 import type { ReorderRow } from "@/features/suppliers/queries";
+import { PRODUCT_TYPES, type ProductTypeKey } from "@/features/inventory/schema";
 import { PayFields, type PayState } from "@/features/suppliers/ui/pay-fields";
 import { useDebounced } from "@/lib/use-debounced";
 import { fillTemplate, waLink } from "@/lib/whatsapp";
@@ -149,7 +150,7 @@ type Line = {
   name: string;
   qty: string;
   unitCost: string;
-  type: "ACCESSORY" | "PART";
+  type: ProductTypeKey;
   price: string;
   barcode: string;
 };
@@ -312,10 +313,7 @@ export function PurchaseButton(c: Common) {
                               value={l.type}
                               onValueChange={(v) => setLine(i, { type: v })}
                               className="self-end"
-                              options={[
-                                { value: "ACCESSORY", label: tt("ACCESSORY") },
-                                { value: "PART", label: tt("PART") },
-                              ]}
+                              options={PRODUCT_TYPES.map((v) => ({ value: v, label: tt(v) }))}
                             />
                             <Field label={t("sellPrice")} htmlFor={`pu-price-${i}`} error={e("newProduct.price")}>
                               <MoneyInput {...fieldAria(`pu-price-${i}`, e("newProduct.price"))} value={l.price} onValueChange={(v) => setLine(i, { price: v })} />

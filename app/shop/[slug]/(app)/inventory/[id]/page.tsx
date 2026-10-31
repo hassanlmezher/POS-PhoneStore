@@ -79,7 +79,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]/in
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight text-balance">{product.name}</h1>
-            <Badge variant={product.type === "PART" ? "soft" : "secondary"}>{tt(product.type)}</Badge>
+            <Badge variant={product.type === "PART" ? "soft" : product.type === "PHONE" ? "success" : "secondary"}>{tt(product.type)}</Badge>
             {!product.active && <Badge variant="outline">{ti("archived")}</Badge>}
           </div>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createProduct, updateProduct } from "@/features/inventory/actions";
-import type { ProductInput } from "@/features/inventory/schema";
+import { PRODUCT_TYPES, type ProductInput, type ProductTypeKey } from "@/features/inventory/schema";
 import { formatMoney, parseMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { marginPercent } from "@/features/inventory/margin";
@@ -20,7 +20,7 @@ import { ModelMultiSelect, type ModelOption } from "./model-multi-select";
 
 export type EditableProduct = {
   id: string;
-  type: "ACCESSORY" | "PART";
+  type: ProductTypeKey;
   name: string;
   sku: string | null;
   barcode: string | null;
@@ -51,7 +51,7 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
   const router = useRouter();
   const listId = useId();
   const [pending, startTransition] = useTransition();
-  const [type, setType] = useState<"ACCESSORY" | "PART">(product?.type ?? "ACCESSORY");
+  const [type, setType] = useState<ProductTypeKey>(product?.type ?? "ACCESSORY");
   const [name, setName] = useState(product?.name ?? "");
   const [sku, setSku] = useState(product?.sku ?? "");
   const [barcode, setBarcode] = useState(product?.barcode ?? "");
@@ -120,11 +120,8 @@ function ProductDialog({ open, onOpenChange, categories, rate, rounding, product
               label={t("type")}
               value={type}
               onValueChange={setType}
-              options={[
-                { value: "ACCESSORY", label: tt("ACCESSORY") },
-                { value: "PART", label: tt("PART") },
-              ]}
-              className="w-full sm:w-72"
+              options={PRODUCT_TYPES.map((v) => ({ value: v, label: tt(v) }))}
+              className="w-full sm:w-96"
             />
           </Field>
           <Field label={t("name")} htmlFor="prod-name" error={errors.name}>

@@ -12,7 +12,7 @@ import { ProductDialogButton } from "@/features/inventory/ui/product-dialog";
 import { can } from "@/lib/permissions";
 import { requireShop } from "@/lib/tenant";
 
-const TABS = ["all", "accessories", "parts", "low"] as const;
+const TABS = ["all", "accessories", "parts", "phones", "low"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function InventoryPage({ params, searchParams }: PageProps<"/shop/[slug]/inventory">) {
@@ -32,7 +32,7 @@ export default async function InventoryPage({ params, searchParams }: PageProps<
     listProducts(db, shop.id, {
       q,
       page,
-      type: tab === "accessories" ? "ACCESSORY" : tab === "parts" ? "PART" : undefined,
+      type: tab === "accessories" ? "ACCESSORY" : tab === "parts" ? "PART" : tab === "phones" ? "PHONE" : undefined,
       lowStock: tab === "low",
       includeArchived: archived,
     }),

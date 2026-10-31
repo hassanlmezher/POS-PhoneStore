@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma, type TenantDb } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import type { ProductTypeKey } from "./schema";
 
 export function productSearchWhere(q: string): Prisma.ProductWhereInput {
   const term = q.trim();
@@ -20,7 +21,7 @@ export const PRODUCTS_PAGE_SIZE = 30;
 
 export type ProductFilters = {
   q?: string;
-  type?: "ACCESSORY" | "PART";
+  type?: ProductTypeKey;
   lowStock?: boolean;
   includeArchived?: boolean;
   page?: number;

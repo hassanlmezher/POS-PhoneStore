@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isDayKey } from "@/lib/dates";
+import { PRODUCT_TYPES } from "@/features/inventory/schema";
 import { parseMoney } from "@/lib/money";
 
 const optionalText = (max: number) =>
@@ -45,7 +46,7 @@ export type PayInput = z.input<typeof payInput>;
 /** A product that is not in stock yet, created by the purchase (cost and quantity come from the line). */
 const newProductInput = z
   .object({
-    type: z.enum(["ACCESSORY", "PART"]),
+    type: z.enum(PRODUCT_TYPES),
     name: z.string().trim().min(1, "required").max(150),
     category: optionalText(60),
     barcode: optionalText(60),

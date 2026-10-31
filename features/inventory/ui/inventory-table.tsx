@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ChevronRight, Printer, X } from "lucide-react";
 import { Ltr } from "@/components/ltr";
+import type { ProductTypeKey } from "@/features/inventory/schema";
 import { Money } from "@/components/money";
 import { StockLevel } from "@/components/stock-level";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export type InventoryRow = {
   id: string;
-  type: "ACCESSORY" | "PART";
+  type: ProductTypeKey;
   name: string;
   sku: string | null;
   barcode: string | null;
@@ -124,7 +125,7 @@ export function InventoryTable({ rows, showCost, rate, rounding }: Props) {
                 </TableCell>
                 <TableCell className="hidden text-muted-foreground xl:table-cell">{p.category ?? "—"}</TableCell>
                 <TableCell className="hidden lg:table-cell">
-                  <Badge variant={p.type === "PART" ? "soft" : "secondary"}>{tt(p.type)}</Badge>
+                  <Badge variant={p.type === "PART" ? "soft" : p.type === "PHONE" ? "success" : "secondary"}>{tt(p.type)}</Badge>
                 </TableCell>
                 <TableCell className="text-end">
                   <StockLevel qty={p.qty} threshold={p.lowStockThreshold} />

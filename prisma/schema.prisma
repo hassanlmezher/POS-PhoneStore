@@ -51,6 +51,7 @@ enum ItemKind {
 enum ProductType {
   ACCESSORY
   PART
+  PHONE
 }
 
 enum MovementReason {

@@ -902,7 +902,8 @@
   },
   "productTypes": {
     "ACCESSORY": "إكسسوار",
-    "PART": "قطعة غيار"
+    "PART": "قطعة غيار",
+    "PHONE": "هاتف"
   },
   "movementReasons": {
     "INITIAL": "مخزون افتتاحي",
@@ -923,6 +924,7 @@
       "all": "الكل",
       "accessories": "إكسسوارات",
       "parts": "قطع غيار",
+      "phones": "هواتف",
       "low": "مخزون منخفض"
     },
     "search": "البحث في المنتجات",
