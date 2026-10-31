@@ -395,7 +395,8 @@ export function ReorderButton({ rows, phone, texts, supplierName, shopName }: { 
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [find, setFind] = useState("");
   const term = find.trim().toLowerCase();
-  const shown = term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows;
+  // Ticked products first so the order is easy to check; otherwise least in stock first.
+  const shown = [...(term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows)].sort((a, b) => Number(b.id in picked) - Number(a.id in picked));
   const items = rows.filter((r) => picked[r.id] && Number(picked[r.id]) > 0);
   const message = fillTemplate(texts.body, {
     supplier: supplierName,
