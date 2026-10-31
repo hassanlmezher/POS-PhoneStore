@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { CalendarClock, ChevronRight, Plus, SearchX, Users } from "lucide-react";
+import { CalendarClock, ChevronRight, HandCoins, Plus, SearchX, Users } from "lucide-react";
+import { LinkTabs } from "@/components/link-tabs";
+import { Money } from "@/components/money";
+import { outstandingBalances } from "@/features/reports/queries";
 import { EmptyState } from "@/components/empty-state";
 import { Ltr } from "@/components/ltr";
 import { PageHeader } from "@/components/page-header";
@@ -12,6 +15,7 @@ import { countDuePlans } from "@/features/installments/queries";
 import { Button } from "@/components/ui/button";
 import { CustomerDialogButton } from "@/features/customers/ui/customer-dialog";
 import { can } from "@/lib/permissions";
+import { formatMoney } from "@/lib/money";
 import { formatPhone } from "@/lib/phone";
 import { requireShop } from "@/lib/tenant";
 
@@ -24,14 +28,28 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
   const format = await getFormatter();
   const q = typeof sp.q === "string" ? sp.q : "";
   const page = Math.max(1, Number(sp.page) || 1);
-  const [{ rows, total, pageSize }, duePlans] = await Promise.all([listCustomers(db, { q, page }), countDuePlans(ctx)]);
+  const owingView = sp.owing === "1";
+  const balances = await outstandingBalances(shop.id);
+  const owed = new Map(balances.rows.filter((r) => r.owedUsdCents > 0).map((r) => [r.customerId, r.owedUsdCents]));
+  const [{ rows, total, pageSize }, duePlans] = await Promise.all([listCustomers(db, { q, page, owing: owingView ? owed : undefined }), countDuePlans(ctx)]);
+  const tabHref = (owing: boolean) => {
+    const p = new URLSearchParams();
+    if (owing) p.set("owing", "1");
+    if (q) p.set("q", q);
+    const qs = p.toString();
+    return qs ? `/customers?${qs}` : "/customers";
+  };
   const canAdd = can(user.role, "tickets.create") && !readOnly;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t("title")}
-        description={t("subtitle", { count: total })}
+        description={
+          owingView
+            ? t("owingSubtitle", { count: owed.size, amount: formatMoney([...owed.values()].reduce((x, y) => x + y, 0), "USD") })
+            : t("subtitle", { count: total })
+        }
         actions={
           <>
             <Button variant="outline" asChild>
@@ -52,13 +70,22 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
       />
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-card">
-        <div className="border-b p-3 sm:p-4">
-          <UrlSearchInput basePath="/customers" label={t("search")} placeholder={t("searchPlaceholder")} className="sm:max-w-sm" />
+        <div className="flex flex-col gap-3 border-b p-3 sm:flex-row sm:items-center sm:p-4">
+          <LinkTabs
+            label={t("filter")}
+            items={[
+              { href: tabHref(false), label: t("tabAll"), active: !owingView },
+              { href: tabHref(true), label: t("tabOwing"), active: owingView, count: owed.size, tone: "warning" as const },
+            ]}
+          />
+          <UrlSearchInput basePath="/customers" label={t("search")} placeholder={t("searchPlaceholder")} className="sm:ms-auto sm:w-72" />
         </div>
 
         {rows.length === 0 ? (
           q ? (
             <EmptyState icon={SearchX} title={t("noResults")} body={t("noResultsBody", { q })} />
+          ) : owingView ? (
+            <EmptyState icon={HandCoins} title={t("noneOwing")} body={t("noneOwingBody")} />
           ) : (
             <EmptyState
               icon={Users}
@@ -83,6 +110,7 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
                   <TableHead>{t("name")}</TableHead>
                   <TableHead>{t("phone")}</TableHead>
                   <TableHead className="text-end">{t("repairs")}</TableHead>
+                  <TableHead className="text-end">{t("owesColumn")}</TableHead>
                   <TableHead>{t("createdAt")}</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -99,6 +127,13 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
                       <Ltr>{formatPhone(c.phone, shop.countryCode)}</Ltr>
                     </TableCell>
                     <TableCell className="text-end tabular-nums">{c._count.tickets}</TableCell>
+                    <TableCell className="text-end">
+                      {owed.has(c.id) ? (
+                        <Money usdCents={owed.get(c.id)!} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end text-sm rtl:items-start" usdClassName="text-warning" lbpClassName="text-xs" />
+                      ) : (
+                        <span className="text-subtle-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{format.dateTime(c.createdAt, { dateStyle: "medium" })}</TableCell>
                     <TableCell>
                       <ChevronRight aria-hidden className="size-4 text-subtle-foreground rtl:rotate-180" />
@@ -119,7 +154,11 @@ export default async function CustomersPage({ params, searchParams }: PageProps<
                         <Ltr>{formatPhone(c.phone, shop.countryCode)}</Ltr>
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground tabular-nums">{t("repairsCount", { count: c._count.tickets })}</span>
+                    {owed.has(c.id) ? (
+                      <Money usdCents={owed.get(c.id)!} rate={shop.exchangeRate} rounding={shop.lbpRounding} className="items-end text-sm rtl:items-start" usdClassName="text-warning" lbpClassName="text-xs" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground tabular-nums">{t("repairsCount", { count: c._count.tickets })}</span>
+                    )}
                     <ChevronRight aria-hidden className="size-4 text-subtle-foreground rtl:rotate-180" />
                   </Link>
                 </li>

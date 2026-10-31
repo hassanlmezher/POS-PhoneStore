@@ -18,7 +18,7 @@
 ### Testing
 Full route test with temporary accounts (never real passwords). Tests that create numbered records (tickets, sales) run the dev server against the local DB (`DATABASE_URL` from .env.local-backup, `DATABASE_CA_CERT=`; seed with `prisma db seed`) so live numbers aren't used up:
 1. `SMOKE_PASSWORD=$(openssl rand -hex 16)` then `SMOKE_PASSWORD=$SMOKE_PASSWORD pnpm exec tsx --conditions=react-server scripts/test-accounts.ts create`
-2. Dev: `SMOKE_PASSWORD=$SMOKE_PASSWORD node scripts/smoke.mjs` (84/84). Production build: run `.next/standalone/server.js` on :3100 with the Vercel env (6543 pooler, PEM CA, ROOT_DOMAIN=inchouf.com, ADMIN_SUBDOMAIN=pos-admin), then add `SMOKE_VIA=http://127.0.0.1:3100 SMOKE_ADMIN_SUB=pos-admin` and pass `inchouf.com` (80/80). Never log in to the live site with test accounts.
+2. Dev: `SMOKE_PASSWORD=$SMOKE_PASSWORD node scripts/smoke.mjs` (85/85). Production build: run `.next/standalone/server.js` on :3100 with the Vercel env (6543 pooler, PEM CA, ROOT_DOMAIN=inchouf.com, ADMIN_SUBDOMAIN=pos-admin), then add `SMOKE_VIA=http://127.0.0.1:3100 SMOKE_ADMIN_SUB=pos-admin` and pass `inchouf.com` (80/80). Never log in to the live site with test accounts.
 3. `pnpm exec tsx --conditions=react-server scripts/test-accounts.ts delete` (re-attributes their records to the demo owner).
 
 ### Local dev
@@ -91,6 +91,7 @@ _(Keep this list updated as they are created.)_
 - `lib/public-url.ts` `redirectPublic(path)`: use instead of `redirect()` in pages (absolute public URL behind Caddy).
 - `lib/tenant.ts` also: `requireActionShop(permission?)` for server actions, `refreshShop()` after mutations.
 - `lib/money.ts` (toLbp, toUsdCents, formatMoney, parseMoney), `lib/phone.ts` (normalizePhone, phoneSearchDigits, waNumber), `lib/crypto.ts` (encrypt/decrypt), `lib/permissions.ts` (`can`), `lib/hosts.ts` (parseHost), `lib/tenant.ts` (requireShop, requirePermission, requireSuperAdmin, getSession), `lib/db.ts` (prisma, tenantDb).
+- `components/unpaid-warning.tsx`: `<UnpaidWarning open owedUsdCents body customer confirmLabel onConfirm payHref?>` before anything leaves unpaid (POS checkout, pickup on ticket page/board). Customers list: `?owing=1` filter (uses `outstandingBalances`).
 - `components/bar-chart.tsx`: `<BarChart items series label height?>` dependency-free stacked SVG bars (USD cents), hover tooltip, RTL-aware, sr-only list; colors `chart-1`/`chart-2` tokens.
 - `components/section-card.tsx`: `<SectionCard title description? actions? padded? id?>` card with header row. `components/auto-refresh.tsx`: `<AutoRefresh seconds />` (router.refresh while visible).
 - `features/cash/ui/*`: cash-diff (`<CashDiff diff currency>`, `signedMoney`), drawer-breakdown, session-lists (MovementList, OtherMethodsList), open/close/movement forms. `features/reports/ui/*`: date-range-picker, sections (Overview/Repairs/Products/Balances). `features/dashboard/ui/ticket-list.tsx`.

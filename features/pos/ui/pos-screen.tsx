@@ -13,7 +13,8 @@ import { StatusBadge, type TicketStatus } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { checkout, searchPos, type PosSearchResult } from "@/features/pos/actions";
-import { formatMoney, type Currency } from "@/lib/money";
+import { UnpaidWarning } from "@/components/unpaid-warning";
+import { formatMoney, parseMoney, type Currency } from "@/lib/money";
 import { useDebounced } from "@/lib/use-debounced";
 import { cn } from "@/lib/utils";
 import { cartTotals, centsToText, newKey, type CartLine, type PaymentRow, type TicketLine } from "./cart";
@@ -190,7 +191,16 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
   }
 
   // ---- Checkout ----
-  function charge() {
+  // Goods or phones leaving the shop with money still owed (credit sale, or a repair handed over part-paid).
+  const goingOut = lines.some((l) => l.kind === "PRODUCT" || l.markPickedUp);
+  const leftOnRepairs = lines.reduce(
+    (s, l) => s + (l.kind === "TICKET_BALANCE" && l.markPickedUp ? Math.max(0, l.balanceUsdCents - (parseMoney(l.amount, "USD") ?? 0)) : 0),
+    0,
+  );
+  const unpaidOut = goingOut ? totals.remaining + leftOnRepairs : 0;
+  const [warnUnpaid, setWarnUnpaid] = useState(false);
+
+  function charge(confirmed = false) {
     if (pending || readOnly || done) return;
     if (!lines.length) return setError("emptyCart");
     const badLine = lines.find((l) => {
@@ -201,6 +211,7 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
     if (needsCustomer) return setError("underpaidNoCustomer");
     if (totals.overpaidNonCash) return setError("overpaidNonCash");
     setError(null);
+    if (unpaidOut > 0 && !confirmed) return setWarnUnpaid(true);
     startTransition(async () => {
       try {
         const res = await checkout({
@@ -529,7 +540,7 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
             </p>
           )}
 
-          <Button size="lg" className="h-14 w-full text-base" onClick={charge} disabled={pending || readOnly || lines.length === 0}>
+          <Button size="lg" className="h-14 w-full text-base" onClick={() => charge()} disabled={pending || readOnly || lines.length === 0}>
             {pending ? <Loader2 className="animate-spin" /> : null}
             {totals.remaining > 0 && payments.length > 0 ? t("chargePartial") : t("charge")}
             <Ltr className="font-semibold">{formatMoney(totals.total, "USD")}</Ltr>
@@ -556,6 +567,20 @@ export function PosScreen({ rate, rounding, readOnly, preloadTicket }: Props) {
       <div className="h-16 md:hidden" aria-hidden />
 
       <DoneDialog info={done} rate={rate} rounding={rounding} onNewSale={reset} />
+      <UnpaidWarning
+        open={warnUnpaid}
+        onOpenChange={setWarnUnpaid}
+        owedUsdCents={unpaidOut}
+        rate={rate}
+        rounding={rounding}
+        customer={customer?.name}
+        body={t("unpaidBody")}
+        confirmLabel={t("unpaidConfirm")}
+        onConfirm={() => {
+          setWarnUnpaid(false);
+          charge(true);
+        }}
+      />
     </div>
   );
 }

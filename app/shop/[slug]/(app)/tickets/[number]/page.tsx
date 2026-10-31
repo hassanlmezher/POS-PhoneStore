@@ -212,7 +212,17 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/s
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {canStatus && <StatusControl ticketId={ticket.id} status={ticket.status} />}
+          {canStatus && (
+            <StatusControl
+              ticketId={ticket.id}
+              status={ticket.status}
+              balanceUsdCents={ticket.balanceUsdCents}
+              customer={ticket.customer.name}
+              rate={rate}
+              rounding={shop.lbpRounding}
+              payHref={can(user.role, "pos") ? `/pos?ticket=${ticket.number}` : null}
+            />
+          )}
           <WhatsAppMenu links={links} suggested={suggestedTemplate(ticket.status, ticket.balanceUsdCents)} />
           <PrintMenu number={ticket.number} />
           {canEdit && (

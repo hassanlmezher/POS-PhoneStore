@@ -162,6 +162,7 @@ export default async function TicketsPage({ params, searchParams }: PageProps<"/
           <TicketBoard
             cards={cards}
             canMove={canMove}
+            canPay={can(user.role, "pos") && !readOnly}
             rate={shop.exchangeRate}
             rounding={shop.lbpRounding}
             closedMore={board.closedMore}

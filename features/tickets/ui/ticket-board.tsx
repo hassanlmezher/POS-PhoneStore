@@ -7,6 +7,7 @@ import { ArrowRight, ArrowRightLeft, CalendarClock, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { Ltr } from "@/components/ltr";
 import { Money } from "@/components/money";
+import { UnpaidWarning } from "@/components/unpaid-warning";
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -56,6 +57,8 @@ const dotClasses: Record<string, string> = {
 type BoardProps = {
   cards: BoardCard[];
   canMove: boolean;
+  /** May take payments at the POS (for the unpaid pickup warning). */
+  canPay: boolean;
   rate: number;
   rounding: number;
   /** Closed tickets not shown in the Closed column (they're in the table view at closedHref). */
@@ -86,7 +89,7 @@ function SpriteIcon({ name, className }: { name: keyof typeof SPRITE; className:
   );
 }
 
-export function TicketBoard({ cards, canMove, rate, rounding, closedMore, closedHref }: BoardProps) {
+export function TicketBoard({ cards, canMove, canPay, rate, rounding, closedMore, closedHref }: BoardProps) {
   const t = useTranslations("tickets");
   const ts = useTranslations("status");
   const [optimistic, move] = useOptimistic(cards, (state, { id, to }: { id: string; to: TicketStatusValue }) =>
@@ -95,8 +98,12 @@ export function TicketBoard({ cards, canMove, rate, rounding, closedMore, closed
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
 
-  function moveCard(card: BoardCard, to: TicketStatusValue) {
+  const tw = useTranslations("unpaidWarning");
+  const [unpaid, setUnpaid] = useState<BoardCard | null>(null);
+
+  function moveCard(card: BoardCard, to: TicketStatusValue, confirmed = false) {
     if (card.status === to) return;
+    if (to === "PICKED_UP" && card.balanceUsdCents > 0 && !confirmed) return setUnpaid(card);
     startTransition(async () => {
       move({ id: card.id, to });
       try {
@@ -112,6 +119,21 @@ export function TicketBoard({ cards, canMove, rate, rounding, closedMore, closed
   return (
     <div className="-mx-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" role="region" aria-label={t("board")} tabIndex={0}>
       <SpriteDefs />
+      <UnpaidWarning
+        open={!!unpaid}
+        onOpenChange={(o) => !o && setUnpaid(null)}
+        owedUsdCents={unpaid?.balanceUsdCents ?? 0}
+        rate={rate}
+        rounding={rounding}
+        customer={unpaid?.customerName}
+        body={tw("pickupBodyLabel", { label: unpaid?.label ?? "" })}
+        confirmLabel={tw("pickupAnyway")}
+        payHref={canPay && unpaid ? `/pos?ticket=${unpaid.number}` : undefined}
+        onConfirm={() => {
+          if (unpaid) moveCard(unpaid, "PICKED_UP", true);
+          setUnpaid(null);
+        }}
+      />
       <div className="flex w-max snap-x snap-mandatory gap-3 sm:gap-4">
         {COLUMNS.map((col) => {
           const items = optimistic.filter((c) => col.statuses.includes(c.status));

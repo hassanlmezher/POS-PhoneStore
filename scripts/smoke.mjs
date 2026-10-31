@@ -88,7 +88,7 @@ const ownerPages = [
   "/customers", `/customers/${customer}`, "/pos", "/sales", `/sales/${sale}`,
   "/inventory", "/inventory?tab=low", `/inventory/${product}`, "/cash", "/cash?tab=history",
   ...(session ? [`/cash/${session}`] : []),
-  "/reports", "/reports?tab=repairs", "/reports?tab=products", "/reports?tab=balances", "/expenses", "/expenses?from=2026-09-01&to=2026-09-30", "/prices", "/tickets/followups", "/tickets/parts", "/tickets/parts?view=arrived", "/suppliers", "/customers/installments", "/customers/installments?view=done",
+  "/reports", "/reports?tab=repairs", "/reports?tab=products", "/reports?tab=balances", "/expenses", "/expenses?from=2026-09-01&to=2026-09-30", "/prices", "/tickets/followups", "/tickets/parts", "/tickets/parts?view=arrived", "/suppliers", "/customers/installments", "/customers/installments?view=done", "/customers?owing=1",
   "/settings", "/settings?tab=receipts", "/settings?tab=rate", "/settings?tab=messages", "/settings?tab=staff",
   "/settings?tab=quickPicks",
   `/print/ticket/${ticket}?size=80mm`, `/print/ticket/${ticket}?size=a4&lang=ar`, `/print/sale/${sale}`,

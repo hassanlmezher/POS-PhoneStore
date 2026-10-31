@@ -37,7 +37,16 @@ export async function searchCustomers(db: TenantDb, q: string, take = 8) {
 
 export const CUSTOMERS_PAGE_SIZE = 25;
 
-export async function listCustomers(db: TenantDb, { q = "", page = 1 }: { q?: string; page?: number }) {
+/**
+ * Customers page list. With `owing` (customer id → USD cents owed), only those customers,
+ * most owed first.
+ */
+export async function listCustomers(db: TenantDb, { q = "", page = 1, owing }: { q?: string; page?: number; owing?: Map<string, number> }) {
+  if (owing) {
+    const all = await db.customer.findMany({ where: { AND: [customerSearchWhere(q), { id: { in: [...owing.keys()] } }] }, select: customerListSelect });
+    all.sort((a, b) => (owing.get(b.id) ?? 0) - (owing.get(a.id) ?? 0));
+    return { rows: all.slice((page - 1) * CUSTOMERS_PAGE_SIZE, page * CUSTOMERS_PAGE_SIZE), total: all.length, pageSize: CUSTOMERS_PAGE_SIZE };
+  }
   const where = customerSearchWhere(q);
   const [rows, total] = await Promise.all([
     db.customer.findMany({

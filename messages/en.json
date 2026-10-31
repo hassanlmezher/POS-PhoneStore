@@ -617,7 +617,14 @@
     "stillToPay": "Still to pay",
     "stillToPayHint": "When the customer pays, press Record payment. It is marked paid once nothing is left.",
     "saleLabel": "Sale #{number}",
-    "installments": "Installments"
+    "installments": "Installments",
+    "filter": "Show",
+    "tabAll": "All",
+    "tabOwing": "Owe money",
+    "owesColumn": "Owes",
+    "noneOwing": "Nobody owes you money",
+    "noneOwingBody": "Customers with unpaid sales or repairs they already took show up here.",
+    "owingSubtitle": "{count, plural, one {# customer owes you} other {# customers owe you}} {amount} in total"
   },
   "tickets": {
     "title": "Repairs",
@@ -1109,7 +1116,9 @@
       "required": "Please fill in the payment amounts.",
       "generic": "Couldn't complete the sale. Please try again.",
       "discountTooLargeCart": "The cart discount is larger than the total."
-    }
+    },
+    "unpaidBody": "These items leave the shop before being fully paid. The rest is added to what the customer owes.",
+    "unpaidConfirm": "Finish sale unpaid"
   },
   "sales": {
     "title": "Sales",
@@ -2102,5 +2111,15 @@
     "searchPlaceholder": "Name, phone, ticket or sale #",
     "noResults": "No match",
     "noResultsBody": "Nobody paying in parts matches \"{q}\"."
+  },
+  "unpaidWarning": {
+    "title": "Not fully paid",
+    "owedBy": "{customer} will owe",
+    "stillOwed": "Still owed",
+    "goBack": "Go back",
+    "takePayment": "Take payment first",
+    "pickupBody": "This phone is being handed back while money is still owed on the repair.",
+    "pickupBodyLabel": "{label} is being handed back while money is still owed on the repair.",
+    "pickupAnyway": "Hand over unpaid"
   }
 }

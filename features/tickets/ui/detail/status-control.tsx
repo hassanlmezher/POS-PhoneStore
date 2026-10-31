@@ -16,12 +16,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { UnpaidWarning } from "@/components/unpaid-warning";
 import { changeTicketStatus } from "@/features/tickets/actions";
 import { TICKET_STATUSES, type TicketStatusValue } from "@/features/tickets/schema";
 import { NEXT_STATUS } from "../ticket-utils";
 
-/** "Next step" button + menu with every status (optional note). */
-export function StatusControl({ ticketId, status }: { ticketId: string; status: TicketStatusValue }) {
+type Props = {
+  ticketId: string;
+  status: TicketStatusValue;
+  /** Still owed: handing the phone over warns first when this is above zero. */
+  balanceUsdCents: number;
+  customer: string;
+  rate: number;
+  rounding: number;
+  /** POS link to take the payment, when the user may use the POS. */
+  payHref: string | null;
+};
+
+/** "Next step" button + menu with every status (optional note). Warns before an unpaid pickup. */
+export function StatusControl({ ticketId, status, balanceUsdCents, customer, rate, rounding, payHref }: Props) {
+  const tw = useTranslations("unpaidWarning");
   const t = useTranslations("ticket");
   const ts = useTranslations("status");
   const tc = useTranslations("common");
@@ -29,8 +43,13 @@ export function StatusControl({ ticketId, status }: { ticketId: string; status: 
   const [target, setTarget] = useState<TicketStatusValue | null>(null);
   const [note, setNote] = useState("");
   const next = NEXT_STATUS[status];
+  const [unpaid, setUnpaid] = useState<{ to: TicketStatusValue; note?: string } | null>(null);
 
-  function change(to: TicketStatusValue, withNote?: string) {
+  function change(to: TicketStatusValue, withNote?: string, confirmed = false) {
+    if (to === "PICKED_UP" && balanceUsdCents > 0 && !confirmed) {
+      setTarget(null);
+      return setUnpaid({ to, note: withNote });
+    }
     startTransition(async () => {
       try {
         const res = await changeTicketStatus(ticketId, to, withNote);
@@ -113,6 +132,22 @@ export function StatusControl({ ticketId, status }: { ticketId: string; status: 
           </form>
         </DialogContent>
       </Dialog>
+
+      <UnpaidWarning
+        open={!!unpaid}
+        onOpenChange={(o) => !o && setUnpaid(null)}
+        owedUsdCents={balanceUsdCents}
+        rate={rate}
+        rounding={rounding}
+        customer={customer}
+        body={tw("pickupBody")}
+        confirmLabel={tw("pickupAnyway")}
+        payHref={payHref ?? undefined}
+        onConfirm={() => {
+          if (unpaid) change(unpaid.to, unpaid.note, true);
+          setUnpaid(null);
+        }}
+      />
     </div>
   );
 }

@@ -155,3 +155,4 @@ One line each. Newest at the bottom.
 - Supplier purchases can create a new product on the spot (type, name, selling price, optional barcode); money back from a supplier is a negative SupplierPayment (drawer PAY_IN); What to order lists least in stock first with a name search.
 - Product type PHONE added (Accessory / Part / Phone) with its own Inventory tab; IMEI tracking stays for feature 12.
 - Installments: a plan sits on one sale or repair (one plan each, a new plan replaces it). Payments are the normal sale/ticket payments; what is paid after the plan starts fills the parts in order (no separate installment payments). 2–12 parts, weekly / every 2 weeks / monthly; 'due soon' = within 3 days.
+- Unpaid warning (not a block): POS checkout warns when goods or a picked-up repair leave with money owed; ticket pickup (page + board) warns when a balance is left. Customers list gets All / Owe money tabs + an Owes column, same numbers as Reports > Balances.
